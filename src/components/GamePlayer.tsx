@@ -54,6 +54,7 @@ export function GamePlayer() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const startRef = useRef<number>(0);
   const rafRef = useRef<number | null>(null);
+  const autoPlayRef = useRef(false);
   const [finalResult, setFinalResult] = useState<{
     score: number;
     correctCount: number;
@@ -201,10 +202,18 @@ export function GamePlayer() {
   const next = useCallback(() => {
     if (idx + 1 >= rounds.length) void finishGame();
     else {
+      autoPlayRef.current = true;
       setIdx((i) => i + 1);
-      setPhase("ready");
     }
   }, [idx, rounds.length, finishGame]);
+
+  // Auto-play when idx advances after "Next song"
+  useEffect(() => {
+    if (autoPlayRef.current && rounds[idx]) {
+      autoPlayRef.current = false;
+      void playRound();
+    }
+  }, [idx, rounds, playRound]);
 
   // ---------- Render ----------
   if (phase === "setup") {

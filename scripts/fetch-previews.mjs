@@ -13,19 +13,49 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-async function lookup(title, artist) {
-  const term = encodeURIComponent(`${artist} ${title}`);
-  const url = `https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=1`;
+function cleanArtist(artist) {
+  // Strip collaboration suffixes: "ft. ...", "feat. ...", "& ...", "x ..."
+  return artist
+    .replace(/\s+(ft\.|feat\.|featuring|&|x)\s+.*/i, "")
+    .trim();
+}
+
+function cleanTitle(title) {
+  // Strip leading parenthetical like "(I Can't Get No) Satisfaction" -> "Satisfaction"
+  return title.replace(/^\([^)]+\)\s*/, "").trim();
+}
+
+async function searchItunes(term) {
+  const url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&media=music&entity=song&limit=3&country=US`;
   const res = await fetch(url, { headers: { "User-Agent": "MelodIQ/0.1" } });
   if (!res.ok) return null;
   const data = await res.json();
-  const hit = data.results?.[0];
-  if (!hit?.previewUrl) return null;
-  return {
-    previewUrl: hit.previewUrl,
-    // 600x600 artwork for nicer covers (optional)
-    artwork: hit.artworkUrl100?.replace("100x100", "600x600") ?? null,
-  };
+  return data.results?.find((r) => r.previewUrl) ?? null;
+}
+
+async function lookup(title, artist) {
+  const cleanedArtist = cleanArtist(artist);
+  const cleanedTitle = cleanTitle(title);
+
+  // Try progressively looser search terms until we get a preview URL.
+  const attempts = [
+    `${artist} ${title}`,
+    `${cleanedArtist} ${title}`,
+    `${cleanedArtist} ${cleanedTitle}`,
+    `${cleanedTitle}`,
+  ];
+
+  for (const term of attempts) {
+    const hit = await searchItunes(term);
+    if (hit?.previewUrl) {
+      return {
+        previewUrl: hit.previewUrl,
+        artwork: hit.artworkUrl100?.replace("100x100", "600x600") ?? null,
+      };
+    }
+    await new Promise((r) => setTimeout(r, 200));
+  }
+  return null;
 }
 
 async function main() {
@@ -45,8 +75,7 @@ async function main() {
       } else {
         console.log(`  · no preview: ${song.artist} — ${song.title}`);
       }
-      // Be polite to the public API.
-      await new Promise((r) => setTimeout(r, 350));
+      await new Promise((r) => setTimeout(r, 300));
     } catch (e) {
       console.log(`  ! error for ${song.title}:`, e.message);
     }
