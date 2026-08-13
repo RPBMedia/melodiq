@@ -22,7 +22,9 @@ export function Visualizer({
   const rafRef = useRef<number | null>(null);
   const ctxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const dataRef = useRef<Uint8Array | null>(null);
+  // Typed as Uint8Array<ArrayBuffer> (not the default ArrayBufferLike) so it
+  // matches AnalyserNode.getByteFrequencyData's parameter in the current DOM lib.
+  const dataRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
   const audioElRef = useRef<HTMLAudioElement | null>(null);
 
   // Keep the latest audio element reference for the animation loop.
