@@ -15,6 +15,7 @@ async function main() {
         genre: s.genre,
         year: s.year,
         coverColor: s.coverColor,
+        difficulty: s.difficulty ?? 2,
         previewUrl: null, // populate later via `npm run fetch:previews`
       },
     });

@@ -10,6 +10,8 @@ export type SeedSong = {
   genre: string;
   year: number;
   coverColor: string;
+  /** PRD M2 tier: 1 easy · 2 medium · 3 hard. Defaults to 2 when omitted. */
+  difficulty?: 1 | 2 | 3;
 };
 
 // Genre order is also used for the in-app genre picker.
@@ -120,4 +122,98 @@ export const SONGS: SeedSong[] = [
   { title: "drivers license", artist: "Olivia Rodrigo", genre: "Modern", year: 2021, coverColor: "#A78BFA" },
   { title: "Industry Baby", artist: "Lil Nas X & Jack Harlow", genre: "Modern", year: 2021, coverColor: "#F97316" },
   { title: "About Damn Time", artist: "Lizzo", genre: "Modern", year: 2022, coverColor: "#22D3EE" },
+
+  // ---- M2 taxonomy batch 1 (metal, jazz, blues, classical, score, folk, …) ----
+  // heavy metal
+  { title: "The Trooper", artist: "Iron Maiden", genre: "heavy metal", year: 1983, coverColor: "#8B5CF6", difficulty: 2 },
+  { title: "Paranoid", artist: "Black Sabbath", genre: "heavy metal", year: 1970, coverColor: "#8B5CF6", difficulty: 2 },
+  { title: "Painkiller", artist: "Judas Priest", genre: "heavy metal", year: 1990, coverColor: "#8B5CF6", difficulty: 2 },
+  { title: "Master of Puppets", artist: "Metallica", genre: "heavy metal", year: 1986, coverColor: "#8B5CF6", difficulty: 1 },
+  { title: "Symphony of Destruction", artist: "Megadeth", genre: "heavy metal", year: 1992, coverColor: "#8B5CF6", difficulty: 2 },
+  { title: "Holy Diver", artist: "Dio", genre: "heavy metal", year: 1983, coverColor: "#8B5CF6", difficulty: 2 },
+  // hard rock
+  { title: "Back in Black", artist: "AC/DC", genre: "hard rock", year: 1980, coverColor: "#FB7185", difficulty: 1 },
+  { title: "Welcome to the Jungle", artist: "Guns N' Roses", genre: "hard rock", year: 1987, coverColor: "#FB7185", difficulty: 1 },
+  { title: "Whole Lotta Love", artist: "Led Zeppelin", genre: "hard rock", year: 1969, coverColor: "#FB7185", difficulty: 1 },
+  { title: "Smoke on the Water", artist: "Deep Purple", genre: "hard rock", year: 1972, coverColor: "#FB7185", difficulty: 1 },
+  { title: "Walk This Way", artist: "Aerosmith", genre: "hard rock", year: 1975, coverColor: "#FB7185", difficulty: 2 },
+  { title: "Panama", artist: "Van Halen", genre: "hard rock", year: 1984, coverColor: "#FB7185", difficulty: 2 },
+  // death metal
+  { title: "Pull the Plug", artist: "Death", genre: "death metal", year: 1988, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Hammer Smashed Face", artist: "Cannibal Corpse", genre: "death metal", year: 1993, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Chapel of Ghouls", artist: "Morbid Angel", genre: "death metal", year: 1989, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Slowly We Rot", artist: "Obituary", genre: "death metal", year: 1989, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Crystal Mountain", artist: "Death", genre: "death metal", year: 1995, coverColor: "#8B5CF6", difficulty: 3 },
+  // black metal
+  { title: "Freezing Moon", artist: "Mayhem", genre: "black metal", year: 1994, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "I Am the Black Wizards", artist: "Emperor", genre: "black metal", year: 1994, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Transilvanian Hunger", artist: "Darkthrone", genre: "black metal", year: 1994, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "A Fine Day to Die", artist: "Bathory", genre: "black metal", year: 1988, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Mother North", artist: "Satyricon", genre: "black metal", year: 1996, coverColor: "#8B5CF6", difficulty: 3 },
+  // folk metal
+  { title: "Lai Lai Hey", artist: "Ensiferum", genre: "folk metal", year: 2004, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Inis Mona", artist: "Eluveitie", genre: "folk metal", year: 2008, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Vodka", artist: "Korpiklaani", genre: "folk metal", year: 2009, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Trollhammaren", artist: "Finntroll", genre: "folk metal", year: 2004, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Twilight of the Thunder God", artist: "Amon Amarth", genre: "folk metal", year: 2008, coverColor: "#8B5CF6", difficulty: 2 },
+  // industrial
+  { title: "Closer", artist: "Nine Inch Nails", genre: "industrial", year: 1994, coverColor: "#22D3EE", difficulty: 1 },
+  { title: "Du Hast", artist: "Rammstein", genre: "industrial", year: 1997, coverColor: "#22D3EE", difficulty: 1 },
+  { title: "The Beautiful People", artist: "Marilyn Manson", genre: "industrial", year: 1996, coverColor: "#22D3EE", difficulty: 2 },
+  { title: "Jesus Built My Hotrod", artist: "Ministry", genre: "industrial", year: 1991, coverColor: "#22D3EE", difficulty: 3 },
+  { title: "Head Like a Hole", artist: "Nine Inch Nails", genre: "industrial", year: 1989, coverColor: "#22D3EE", difficulty: 2 },
+  // jazz
+  { title: "Take Five", artist: "The Dave Brubeck Quartet", genre: "jazz", year: 1959, coverColor: "#FBBF24", difficulty: 1 },
+  { title: "So What", artist: "Miles Davis", genre: "jazz", year: 1959, coverColor: "#FBBF24", difficulty: 2 },
+  { title: "Giant Steps", artist: "John Coltrane", genre: "jazz", year: 1960, coverColor: "#FBBF24", difficulty: 3 },
+  { title: "What a Wonderful World", artist: "Louis Armstrong", genre: "jazz", year: 1967, coverColor: "#FBBF24", difficulty: 1 },
+  { title: "Take the \"A\" Train", artist: "Duke Ellington", genre: "jazz", year: 1941, coverColor: "#FBBF24", difficulty: 2 },
+  { title: "Cantaloupe Island", artist: "Herbie Hancock", genre: "jazz", year: 1964, coverColor: "#FBBF24", difficulty: 3 },
+  // blues
+  { title: "The Thrill Is Gone", artist: "B.B. King", genre: "blues", year: 1969, coverColor: "#FBBF24", difficulty: 2 },
+  { title: "Hoochie Coochie Man", artist: "Muddy Waters", genre: "blues", year: 1954, coverColor: "#FBBF24", difficulty: 3 },
+  { title: "Boom Boom", artist: "John Lee Hooker", genre: "blues", year: 1962, coverColor: "#FBBF24", difficulty: 2 },
+  { title: "Cross Road Blues", artist: "Robert Johnson", genre: "blues", year: 1936, coverColor: "#FBBF24", difficulty: 3 },
+  { title: "Pride and Joy", artist: "Stevie Ray Vaughan", genre: "blues", year: 1983, coverColor: "#FBBF24", difficulty: 2 },
+  { title: "At Last", artist: "Etta James", genre: "blues", year: 1960, coverColor: "#FBBF24", difficulty: 1 },
+  // classical
+  { title: "Symphony No. 5", artist: "Ludwig van Beethoven", genre: "classical", year: 1808, coverColor: "#34D399", difficulty: 1 },
+  { title: "Eine kleine Nachtmusik", artist: "Wolfgang Amadeus Mozart", genre: "classical", year: 1787, coverColor: "#34D399", difficulty: 1 },
+  { title: "The Four Seasons: Spring", artist: "Antonio Vivaldi", genre: "classical", year: 1725, coverColor: "#34D399", difficulty: 2 },
+  { title: "Toccata and Fugue in D minor", artist: "Johann Sebastian Bach", genre: "classical", year: 1708, coverColor: "#34D399", difficulty: 2 },
+  { title: "1812 Overture", artist: "Pyotr Ilyich Tchaikovsky", genre: "classical", year: 1880, coverColor: "#34D399", difficulty: 2 },
+  { title: "In the Hall of the Mountain King", artist: "Edvard Grieg", genre: "classical", year: 1875, coverColor: "#34D399", difficulty: 2 },
+  // score / soundtrack
+  { title: "Time", artist: "Hans Zimmer", genre: "ost", year: 2010, coverColor: "#34D399", difficulty: 2 },
+  { title: "Star Wars (Main Title)", artist: "John Williams", genre: "ost", year: 1977, coverColor: "#34D399", difficulty: 1 },
+  { title: "Concerning Hobbits", artist: "Howard Shore", genre: "ost", year: 2001, coverColor: "#34D399", difficulty: 3 },
+  { title: "The Good, the Bad and the Ugly", artist: "Ennio Morricone", genre: "ost", year: 1966, coverColor: "#34D399", difficulty: 2 },
+  { title: "Chariots of Fire", artist: "Vangelis", genre: "ost", year: 1981, coverColor: "#34D399", difficulty: 2 },
+  { title: "Game of Thrones (Main Title)", artist: "Ramin Djawadi", genre: "ost", year: 2011, coverColor: "#34D399", difficulty: 2 },
+  // folk
+  { title: "Blowin' in the Wind", artist: "Bob Dylan", genre: "folk", year: 1963, coverColor: "#FB923C", difficulty: 1 },
+  { title: "The Sound of Silence", artist: "Simon & Garfunkel", genre: "folk", year: 1964, coverColor: "#FB923C", difficulty: 1 },
+  { title: "This Land Is Your Land", artist: "Woody Guthrie", genre: "folk", year: 1944, coverColor: "#FB923C", difficulty: 2 },
+  { title: "Diamonds & Rust", artist: "Joan Baez", genre: "folk", year: 1975, coverColor: "#FB923C", difficulty: 3 },
+  { title: "Pink Moon", artist: "Nick Drake", genre: "folk", year: 1972, coverColor: "#FB923C", difficulty: 3 },
+  { title: "The Boxer", artist: "Simon & Garfunkel", genre: "folk", year: 1969, coverColor: "#FB923C", difficulty: 2 },
+  // new age
+  { title: "Orinoco Flow", artist: "Enya", genre: "new-age", year: 1988, coverColor: "#34D399", difficulty: 2 },
+  { title: "Santorini", artist: "Yanni", genre: "new-age", year: 1994, coverColor: "#34D399", difficulty: 3 },
+  { title: "Silk Road", artist: "Kitaro", genre: "new-age", year: 1980, coverColor: "#34D399", difficulty: 3 },
+  { title: "Return to Innocence", artist: "Enigma", genre: "new-age", year: 1993, coverColor: "#34D399", difficulty: 2 },
+  { title: "Watermark", artist: "Enya", genre: "new-age", year: 1988, coverColor: "#34D399", difficulty: 3 },
+  // indie
+  { title: "Do I Wanna Know?", artist: "Arctic Monkeys", genre: "indie", year: 2013, coverColor: "#FF2D87", difficulty: 1 },
+  { title: "Last Nite", artist: "The Strokes", genre: "indie", year: 2001, coverColor: "#FF2D87", difficulty: 2 },
+  { title: "A-Punk", artist: "Vampire Weekend", genre: "indie", year: 2008, coverColor: "#FF2D87", difficulty: 2 },
+  { title: "The Less I Know the Better", artist: "Tame Impala", genre: "indie", year: 2015, coverColor: "#FF2D87", difficulty: 1 },
+  { title: "Dog Days Are Over", artist: "Florence + The Machine", genre: "indie", year: 2008, coverColor: "#FF2D87", difficulty: 2 },
+  { title: "Take Me Out", artist: "Franz Ferdinand", genre: "indie", year: 2004, coverColor: "#FF2D87", difficulty: 2 },
+  // pop rock
+  { title: "Mr. Brightside", artist: "The Killers", genre: "pop rock", year: 2003, coverColor: "#FB7185", difficulty: 1 },
+  { title: "Yellow", artist: "Coldplay", genre: "pop rock", year: 2000, coverColor: "#FB7185", difficulty: 1 },
+  { title: "Counting Stars", artist: "OneRepublic", genre: "pop rock", year: 2013, coverColor: "#FB7185", difficulty: 1 },
+  { title: "Radioactive", artist: "Imagine Dragons", genre: "pop rock", year: 2012, coverColor: "#FB7185", difficulty: 1 },
+  { title: "She Will Be Loved", artist: "Maroon 5", genre: "pop rock", year: 2004, coverColor: "#FB7185", difficulty: 2 },
 ];

@@ -1,13 +1,13 @@
 // MelodIQ database schema
-// Dev uses SQLite for zero-config setup. For production, change provider to
-// "postgresql" and point DATABASE_URL at your Postgres instance.
+// Postgres in every environment (serverless-friendly for Vercel). Point
+// DATABASE_URL at your Postgres instance (Neon / Vercel Postgres / Supabase).
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
