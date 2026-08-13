@@ -432,19 +432,25 @@ function SetupScreen({
   setGenre: (g: string) => void;
   onStart: () => void;
 }) {
-  const [genres, setGenres] = useState<{ genre: string; count: number }[] | null>(null);
+  type FamilyGroup = {
+    id: string;
+    label: string;
+    emoji: string;
+    accent: string;
+    count: number;
+    genres: { genre: string; label: string; emoji: string; count: number }[];
+  };
+  const [families, setFamilies] = useState<FamilyGroup[] | null>(null);
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
     fetch("/api/genres")
       .then((r) => r.json())
       .then((d) => {
-        if (d.genres) {
-          setGenres(d.genres);
-          setTotal(d.total ?? 0);
-        }
+        setFamilies(d.families ?? []);
+        setTotal(d.total ?? 0);
       })
-      .catch(() => setGenres([]));
+      .catch(() => setFamilies([]));
   }, []);
 
   return (
@@ -463,13 +469,28 @@ function SetupScreen({
       </div>
 
       <h2 className="mt-7 text-sm font-semibold uppercase tracking-wider text-muted">Playlist</h2>
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <GenrePill active={genre === "all"} onClick={() => setGenre("all")} label="All genres" count={total} />
-        {(genres ?? []).map((g) => (
-          <GenrePill key={g.genre} active={genre === g.genre} onClick={() => setGenre(g.genre)} label={g.genre} count={g.count} />
-        ))}
-        {genres === null && <p className="col-span-2 text-sm text-muted">Loading genres…</p>}
+      <div className="mt-3">
+        <GenrePill active={genre === "all"} onClick={() => setGenre("all")} label="🎧 All genres" count={total} />
       </div>
+      {families === null && <p className="mt-3 text-sm text-muted">Loading genres…</p>}
+      {(families ?? []).map((fam) => (
+        <div key={fam.id} className="mt-5">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted" style={{ color: fam.accent }}>
+            {fam.emoji} {fam.label}
+          </h3>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {fam.genres.map((g) => (
+              <GenrePill
+                key={g.genre}
+                active={genre === g.genre}
+                onClick={() => setGenre(g.genre)}
+                label={`${g.emoji} ${g.label}`}
+                count={g.count}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
 
       <button onClick={onStart} className="btn-primary mt-8 w-full px-6 py-5 text-lg">▶ Start game</button>
     </motion.div>
