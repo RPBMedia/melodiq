@@ -216,4 +216,71 @@ export const SONGS: SeedSong[] = [
   { title: "Counting Stars", artist: "OneRepublic", genre: "pop rock", year: 2013, coverColor: "#FB7185", difficulty: 1 },
   { title: "Radioactive", artist: "Imagine Dragons", genre: "pop rock", year: 2012, coverColor: "#FB7185", difficulty: 1 },
   { title: "She Will Be Loved", artist: "Maroon 5", genre: "pop rock", year: 2004, coverColor: "#FB7185", difficulty: 2 },
+
+  // ---- M2 taxonomy batch 2 (depth) ----
+  // heavy metal
+  { title: "Crazy Train", artist: "Ozzy Osbourne", genre: "heavy metal", year: 1980, coverColor: "#8B5CF6", difficulty: 1 },
+  { title: "Walk", artist: "Pantera", genre: "heavy metal", year: 1992, coverColor: "#8B5CF6", difficulty: 2 },
+  { title: "Raining Blood", artist: "Slayer", genre: "heavy metal", year: 1986, coverColor: "#8B5CF6", difficulty: 2 },
+  { title: "Ace of Spades", artist: "Motörhead", genre: "heavy metal", year: 1980, coverColor: "#8B5CF6", difficulty: 1 },
+  // hard rock
+  { title: "Rock and Roll All Nite", artist: "Kiss", genre: "hard rock", year: 1975, coverColor: "#FB7185", difficulty: 2 },
+  { title: "La Grange", artist: "ZZ Top", genre: "hard rock", year: 1973, coverColor: "#FB7185", difficulty: 2 },
+  { title: "Rock You Like a Hurricane", artist: "Scorpions", genre: "hard rock", year: 1984, coverColor: "#FB7185", difficulty: 2 },
+  { title: "Baba O'Riley", artist: "The Who", genre: "hard rock", year: 1971, coverColor: "#FB7185", difficulty: 2 },
+  // death metal
+  { title: "Eaten", artist: "Bloodbath", genre: "death metal", year: 2004, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Sarcophagus", artist: "Nile", genre: "death metal", year: 1998, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "World Eater", artist: "Bolt Thrower", genre: "death metal", year: 1991, coverColor: "#8B5CF6", difficulty: 3 },
+  // black metal
+  { title: "Dunkelheit", artist: "Burzum", genre: "black metal", year: 1996, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Mourning Palace", artist: "Dimmu Borgir", genre: "black metal", year: 1997, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Sons of Northern Darkness", artist: "Immortal", genre: "black metal", year: 2002, coverColor: "#8B5CF6", difficulty: 3 },
+  // folk metal
+  { title: "Rasputin", artist: "Turisas", genre: "folk metal", year: 2007, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Keelhauled", artist: "Alestorm", genre: "folk metal", year: 2009, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Sons of Winter and Stars", artist: "Wintersun", genre: "folk metal", year: 2004, coverColor: "#8B5CF6", difficulty: 3 },
+  // industrial
+  { title: "Hurt", artist: "Nine Inch Nails", genre: "industrial", year: 1994, coverColor: "#22D3EE", difficulty: 2 },
+  { title: "Sonne", artist: "Rammstein", genre: "industrial", year: 2001, coverColor: "#22D3EE", difficulty: 2 },
+  { title: "A Drug Against War", artist: "KMFDM", genre: "industrial", year: 1993, coverColor: "#22D3EE", difficulty: 3 },
+  // jazz
+  { title: "Ornithology", artist: "Charlie Parker", genre: "jazz", year: 1946, coverColor: "#FBBF24", difficulty: 3 },
+  { title: "'Round Midnight", artist: "Thelonious Monk", genre: "jazz", year: 1947, coverColor: "#FBBF24", difficulty: 3 },
+  { title: "Strange Fruit", artist: "Billie Holiday", genre: "jazz", year: 1939, coverColor: "#FBBF24", difficulty: 2 },
+  { title: "My Funny Valentine", artist: "Chet Baker", genre: "jazz", year: 1954, coverColor: "#FBBF24", difficulty: 2 },
+  // blues
+  { title: "Smokestack Lightnin'", artist: "Howlin' Wolf", genre: "blues", year: 1956, coverColor: "#FBBF24", difficulty: 3 },
+  { title: "Crossroads", artist: "Cream", genre: "blues", year: 1968, coverColor: "#FBBF24", difficulty: 2 },
+  { title: "Damn Right, I've Got the Blues", artist: "Buddy Guy", genre: "blues", year: 1991, coverColor: "#FBBF24", difficulty: 3 },
+  { title: "Sweet Home Chicago", artist: "Robert Johnson", genre: "blues", year: 1937, coverColor: "#FBBF24", difficulty: 3 },
+  // classical
+  { title: "Für Elise", artist: "Ludwig van Beethoven", genre: "classical", year: 1810, coverColor: "#34D399", difficulty: 1 },
+  { title: "Canon in D", artist: "Johann Pachelbel", genre: "classical", year: 1680, coverColor: "#34D399", difficulty: 1 },
+  { title: "Nocturne Op. 9 No. 2", artist: "Frédéric Chopin", genre: "classical", year: 1832, coverColor: "#34D399", difficulty: 2 },
+  { title: "The Planets: Mars", artist: "Gustav Holst", genre: "classical", year: 1916, coverColor: "#34D399", difficulty: 3 },
+  // score / soundtrack
+  { title: "Jurassic Park Theme", artist: "John Williams", genre: "ost", year: 1993, coverColor: "#34D399", difficulty: 1 },
+  { title: "He's a Pirate", artist: "Klaus Badelt", genre: "ost", year: 2003, coverColor: "#34D399", difficulty: 2 },
+  { title: "Gonna Fly Now", artist: "Bill Conti", genre: "ost", year: 1976, coverColor: "#34D399", difficulty: 2 },
+  { title: "Back to the Future", artist: "Alan Silvestri", genre: "ost", year: 1985, coverColor: "#34D399", difficulty: 2 },
+  // folk
+  { title: "Both Sides Now", artist: "Joni Mitchell", genre: "folk", year: 1969, coverColor: "#FB923C", difficulty: 2 },
+  { title: "Heart of Gold", artist: "Neil Young", genre: "folk", year: 1972, coverColor: "#FB923C", difficulty: 2 },
+  { title: "Wild World", artist: "Cat Stevens", genre: "folk", year: 1970, coverColor: "#FB923C", difficulty: 2 },
+  { title: "Puff, the Magic Dragon", artist: "Peter, Paul and Mary", genre: "folk", year: 1963, coverColor: "#FB923C", difficulty: 2 },
+  // new age
+  { title: "Only Time", artist: "Enya", genre: "new-age", year: 2000, coverColor: "#34D399", difficulty: 2 },
+  { title: "Oxygène, Pt. IV", artist: "Jean-Michel Jarre", genre: "new-age", year: 1976, coverColor: "#34D399", difficulty: 3 },
+  { title: "Tubular Bells", artist: "Mike Oldfield", genre: "new-age", year: 1973, coverColor: "#34D399", difficulty: 3 },
+  // indie
+  { title: "Skinny Love", artist: "Bon Iver", genre: "indie", year: 2007, coverColor: "#FF2D87", difficulty: 2 },
+  { title: "Kids", artist: "MGMT", genre: "indie", year: 2007, coverColor: "#FF2D87", difficulty: 1 },
+  { title: "Pumped Up Kicks", artist: "Foster the People", genre: "indie", year: 2010, coverColor: "#FF2D87", difficulty: 1 },
+  { title: "Breezeblocks", artist: "Alt-J", genre: "indie", year: 2012, coverColor: "#FF2D87", difficulty: 2 },
+  // pop rock
+  { title: "Sugar, We're Goin Down", artist: "Fall Out Boy", genre: "pop rock", year: 2005, coverColor: "#FB7185", difficulty: 2 },
+  { title: "Misery Business", artist: "Paramore", genre: "pop rock", year: 2007, coverColor: "#FB7185", difficulty: 2 },
+  { title: "Boulevard of Broken Dreams", artist: "Green Day", genre: "pop rock", year: 2004, coverColor: "#FB7185", difficulty: 1 },
+  { title: "How to Save a Life", artist: "The Fray", genre: "pop rock", year: 2005, coverColor: "#FB7185", difficulty: 2 },
 ];
