@@ -72,6 +72,8 @@ model Song {
   artist     String
   genre      String
   year       Int?
+  difficulty Int      @default(2) // PRD M2 tiers: 1 easy · 2 medium · 3 hard
+  provider   String? // preview source: "itunes" | "deezer" | null
   coverColor String   @default("#8B5CF6") // seeds the gradient placeholder art
   previewUrl String? // legal 30s preview; null => silent timed round
   createdAt  DateTime @default(now())
@@ -79,6 +81,7 @@ model Song {
   rounds Round[]
 
   @@index([genre])
+  @@index([difficulty])
 }
 
 // One completed 10-song game. The public leaderboard is a ranked read over

@@ -1,86 +1,125 @@
-// Optional: populate legal 30-second preview URLs from the iTunes Search API.
+// Multi-provider preview pipeline (PRD M2).
 //
-// Apple's iTunes Search API is free, needs no API key, and returns a
-// `previewUrl` field that points to a licensed 30s AAC/M4A preview clip that
-// is allowed to be streamed. This script matches each seeded song to its
-// closest iTunes result and saves the previewUrl + artwork onto the Song row.
+// Populates each Song with a LEGAL 30-second preview URL, trying providers in
+// order and validating that the chosen URL actually resolves before saving:
+//   1. iTunes Search API (free, no key, AAC/M4A previews)
+//   2. Deezer public API  (free, no key, MP3 previews) — fallback
+// Records which provider won on `Song.provider`.
 //
-// Usage:  npm run fetch:previews
+// Usage:
+//   npm run fetch:previews          # only fill songs missing a preview
+//   FORCE=1 npm run fetch:previews  # re-resolve every song
 //
-// Requires Node 18+ (global fetch). Run AFTER `npm run db:seed`.
+// Requires Node 18+ (global fetch). Run AFTER `npm run db:push` + `db:seed`.
 
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
+const FORCE = process.env.FORCE === "1" || process.argv.includes("--force");
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function cleanArtist(artist) {
-  // Strip collaboration suffixes: "ft. ...", "feat. ...", "& ...", "x ..."
-  return artist
-    .replace(/\s+(ft\.|feat\.|featuring|&|x)\s+.*/i, "")
-    .trim();
+  return artist.replace(/\s+(ft\.|feat\.|featuring|&|x)\s+.*/i, "").trim();
+}
+function cleanTitle(title) {
+  return title.replace(/^\([^)]+\)\s*/, "").trim();
 }
 
-function cleanTitle(title) {
-  // Strip leading parenthetical like "(I Can't Get No) Satisfaction" -> "Satisfaction"
-  return title.replace(/^\([^)]+\)\s*/, "").trim();
+/** Verify a preview URL resolves to real audio (cheap HEAD, ranged-GET fallback). */
+async function validate(url) {
+  if (!url) return false;
+  try {
+    const head = await fetch(url, { method: "HEAD" });
+    if (head.ok) return true;
+  } catch {
+    /* some CDNs reject HEAD; fall through */
+  }
+  try {
+    const res = await fetch(url, { headers: { Range: "bytes=0-1" } });
+    return res.ok || res.status === 206;
+  } catch {
+    return false;
+  }
 }
 
 async function searchItunes(term) {
   const url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&media=music&entity=song&limit=3&country=US`;
-  const res = await fetch(url, { headers: { "User-Agent": "MelodIQ/0.1" } });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.results?.find((r) => r.previewUrl) ?? null;
+  try {
+    const res = await fetch(url, { headers: { "User-Agent": "MelodIQ/0.2" } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const hit = data.results?.find((r) => r.previewUrl);
+    return hit?.previewUrl ?? null;
+  } catch {
+    return null;
+  }
 }
 
-async function lookup(title, artist) {
-  const cleanedArtist = cleanArtist(artist);
-  const cleanedTitle = cleanTitle(title);
+async function searchDeezer(term) {
+  const url = `https://api.deezer.com/search?q=${encodeURIComponent(term)}&limit=5`;
+  try {
+    const res = await fetch(url, { headers: { "User-Agent": "MelodIQ/0.2" } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const hit = data.data?.find((r) => r.preview);
+    return hit?.preview ?? null;
+  } catch {
+    return null;
+  }
+}
 
-  // Try progressively looser search terms until we get a preview URL.
-  const attempts = [
-    `${artist} ${title}`,
-    `${cleanedArtist} ${title}`,
-    `${cleanedArtist} ${cleanedTitle}`,
-    `${cleanedTitle}`,
-  ];
+/** Resolve a validated preview + provider, trying iTunes then Deezer. */
+async function resolve(title, artist) {
+  const a = cleanArtist(artist);
+  const t = cleanTitle(title);
+  const terms = [`${artist} ${title}`, `${a} ${title}`, `${a} ${t}`, `${t}`];
 
-  for (const term of attempts) {
-    const hit = await searchItunes(term);
-    if (hit?.previewUrl) {
-      return {
-        previewUrl: hit.previewUrl,
-        artwork: hit.artworkUrl100?.replace("100x100", "600x600") ?? null,
-      };
+  for (const provider of ["itunes", "deezer"]) {
+    const search = provider === "itunes" ? searchItunes : searchDeezer;
+    for (const term of terms) {
+      const url = await search(term);
+      if (url && (await validate(url))) return { previewUrl: url, provider };
+      await sleep(150);
     }
-    await new Promise((r) => setTimeout(r, 200));
   }
   return null;
 }
 
 async function main() {
-  const songs = await prisma.song.findMany();
-  console.log(`Resolving previews for ${songs.length} songs...`);
-  let ok = 0;
+  const where = FORCE ? {} : { previewUrl: null };
+  const songs = await prisma.song.findMany({ where });
+  console.log(
+    `Resolving previews for ${songs.length} song(s)${FORCE ? " (forced)" : " (missing only)"}...`,
+  );
+
+  const byProvider = { itunes: 0, deezer: 0 };
+  let missing = 0;
   for (const song of songs) {
     try {
-      const found = await lookup(song.title, song.artist);
+      const found = await resolve(song.title, song.artist);
       if (found) {
         await prisma.song.update({
           where: { id: song.id },
-          data: { previewUrl: found.previewUrl },
+          data: { previewUrl: found.previewUrl, provider: found.provider },
         });
-        ok++;
-        console.log(`  ✓ ${song.artist} — ${song.title}`);
+        byProvider[found.provider]++;
+        console.log(`  ✓ [${found.provider}] ${song.artist} — ${song.title}`);
       } else {
+        missing++;
         console.log(`  · no preview: ${song.artist} — ${song.title}`);
       }
-      await new Promise((r) => setTimeout(r, 300));
+      await sleep(250);
     } catch (e) {
       console.log(`  ! error for ${song.title}:`, e.message);
     }
   }
-  console.log(`Done. ${ok}/${songs.length} previews populated.`);
+
+  const ok = byProvider.itunes + byProvider.deezer;
+  console.log(
+    `\nDone. ${ok}/${songs.length} resolved ` +
+      `(iTunes ${byProvider.itunes}, Deezer ${byProvider.deezer}); ${missing} still missing.`,
+  );
 }
 
 main()
