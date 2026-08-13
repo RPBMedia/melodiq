@@ -4,6 +4,10 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // Set explicitly (rather than relying on v5 env auto-detection) so a missing
+  // secret fails loudly at config time and Vercel host-trust is unambiguous.
+  secret: process.env.AUTH_SECRET,
+  trustHost: true,
   adapter: PrismaAdapter(prisma),
   providers: [
     Google({
