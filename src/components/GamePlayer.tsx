@@ -147,33 +147,37 @@ export function GamePlayer() {
   }, [phase, answer, stopClock]);
 
   // ----- Begin a round: tell the server, then play -----
-  const playRound = useCallback(async () => {
+  const playRound = useCallback(() => {
     if (!round || !gameId) return;
     answeredRef.current = false;
     setPicked(null);
     setTyped("");
     setReveal(null);
     setElapsedMs(0);
-    try {
-      await fetch("/api/game/round/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gameId, order: round.order }),
-      });
-    } catch {
-      // Non-fatal: the answer endpoint defends against a missing start.
-    }
     startRef.current = performance.now();
     setPhase("playing");
+    // Start playback SYNCHRONOUSLY, before any await, so it runs inside the
+    // user gesture that called us (the "Play clip" / "Next song" tap). This is
+    // required for native audio autoplay rules — round 1's gesture-play also
+    // unlocks the <audio> element so later rounds can play programmatically.
     const audio = audioRef.current;
     if (audio && round.previewUrl) {
       try {
         audio.currentTime = 0;
-        await audio.play();
       } catch {
-        // Autoplay blocked or load error — the round still runs silently.
+        /* not seekable yet — play() will still start it */
       }
+      audio.play().catch(() => {
+        /* autoplay blocked / load error — the round still runs silently */
+      });
     }
+    // Record the round start server-side without blocking playback (the answer
+    // endpoint defends against a missing start).
+    fetch("/api/game/round/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ gameId, order: round.order }),
+    }).catch(() => {});
   }, [round, gameId]);
 
   const finishGame = useCallback(async () => {
