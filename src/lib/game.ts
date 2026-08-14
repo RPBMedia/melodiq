@@ -37,7 +37,10 @@ function shuffle<T>(arr: T[]): T[] {
  * that genre; otherwise the whole pool is used. Decoys top up from the full
  * pool if a genre is too small to supply enough distinct options.
  */
-export async function buildGame(genre?: string | null): Promise<BuiltGame> {
+export async function buildGame(
+  genre?: string | null,
+  count: number = SONGS_PER_GAME,
+): Promise<BuiltGame> {
   const all = await prisma.song.findMany();
   if (all.length < OPTIONS_PER_ROUND) {
     throw new Error("Song pool is too small. Run `npm run db:seed`.");
@@ -57,7 +60,8 @@ export async function buildGame(genre?: string | null): Promise<BuiltGame> {
 
   const pool = inGenre.length >= OPTIONS_PER_ROUND ? inGenre : all;
 
-  const picks = shuffle(pool).slice(0, Math.min(SONGS_PER_GAME, pool.length));
+  // Requested length, capped by how many distinct songs the pool can field.
+  const picks = shuffle(pool).slice(0, Math.min(count, pool.length));
 
   // Freshen preview URLs at serve time: Deezer URLs expire (403 → silence), so
   // re-resolve any missing/ephemeral one now. Stable iTunes URLs are kept. Done

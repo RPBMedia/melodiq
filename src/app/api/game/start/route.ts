@@ -11,17 +11,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
-  let body: { genre?: string | null; mode?: string } = {};
+  let body: { genre?: string | null; mode?: string; count?: number } = {};
   try {
     body = await req.json();
   } catch {
-    // empty body is fine — defaults to all genres, multiple choice
+    // empty body is fine — defaults to all genres, multiple choice, 10 songs
   }
   const genre = body.genre && body.genre !== "all" ? body.genre : null;
   const mode = body.mode === "typing" ? "typing" : "multiple";
+  const count = [10, 20, 30].includes(body.count ?? 10) ? (body.count as number) : 10;
 
   try {
-    const { rounds, titlePool } = await buildGame(genre);
+    const { rounds, titlePool } = await buildGame(genre, count);
 
     const game = await prisma.gameSession.create({
       data: {

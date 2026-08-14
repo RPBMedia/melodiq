@@ -36,6 +36,7 @@ export function GamePlayer() {
   // setup choices
   const [mode, setMode] = useState<Mode>("multiple");
   const [genre, setGenre] = useState<string>("all");
+  const [count, setCount] = useState<number>(10);
 
   // game data
   const [gameId, setGameId] = useState<string | null>(null);
@@ -91,7 +92,7 @@ export function GamePlayer() {
       const res = await fetch("/api/game/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ genre, mode }),
+        body: JSON.stringify({ genre, mode, count }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -108,7 +109,7 @@ export function GamePlayer() {
       setError(e instanceof Error ? e.message : "Something went wrong.");
       setPhase("error");
     }
-  }, [genre, mode]);
+  }, [genre, mode, count]);
 
   // ----- Answer the current round (server scores it) -----
   const answer = useCallback(
@@ -236,7 +237,7 @@ export function GamePlayer() {
 
   // ---------- Render ----------
   if (phase === "setup") {
-    return <SetupScreen mode={mode} setMode={setMode} genre={genre} setGenre={setGenre} onStart={startGame} />;
+    return <SetupScreen mode={mode} setMode={setMode} genre={genre} setGenre={setGenre} count={count} setCount={setCount} onStart={startGame} />;
   }
 
   if (phase === "loading") {
@@ -447,12 +448,16 @@ function SetupScreen({
   setMode,
   genre,
   setGenre,
+  count,
+  setCount,
   onStart,
 }: {
   mode: Mode;
   setMode: (m: Mode) => void;
   genre: string;
   setGenre: (g: string) => void;
+  count: number;
+  setCount: (n: number) => void;
   onStart: () => void;
 }) {
   type FamilyGroup = {
@@ -483,12 +488,28 @@ function SetupScreen({
       className="mx-auto max-w-md"
     >
       <h1 className="font-display text-2xl font-bold">New game</h1>
-      <p className="mt-1 text-muted">10 songs · 30 seconds each · faster = more points.</p>
+      <p className="mt-1 text-muted">{count} songs · 30 seconds each · faster = more points.</p>
 
       <h2 className="mt-7 text-sm font-semibold uppercase tracking-wider text-muted">How to answer</h2>
       <div className="mt-3 grid grid-cols-2 gap-3">
         <Choice active={mode === "multiple"} onClick={() => setMode("multiple")} title="Multiple choice" sub="Pick from 4 options" />
         <Choice active={mode === "typing"} onClick={() => setMode("typing")} title="Type the title" sub="Harder · type it in" />
+      </div>
+
+      <h2 className="mt-7 text-sm font-semibold uppercase tracking-wider text-muted">Game length</h2>
+      <div className="mt-3 grid grid-cols-3 gap-3">
+        {[10, 20, 30].map((n) => (
+          <button
+            key={n}
+            onClick={() => setCount(n)}
+            className={`rounded-2xl border p-4 text-center transition-all active:scale-[0.98] ${
+              count === n ? "border-violet bg-violet/15 shadow-glow" : "border-line bg-surface2/50 hover:bg-surface2"
+            }`}
+          >
+            <div className="font-display text-xl font-bold tabular-nums">{n}</div>
+            <div className="text-xs text-muted">songs</div>
+          </button>
+        ))}
       </div>
 
       <h2 className="mt-7 text-sm font-semibold uppercase tracking-wider text-muted">Playlist</h2>
