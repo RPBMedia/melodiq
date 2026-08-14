@@ -13,7 +13,7 @@ type Round = {
   previewUrl: string | null;
   coverColor: string;
   artist: string;
-  options: string[];
+  options: { title: string; artist: string }[];
 };
 
 type Mode = "multiple" | "typing";
@@ -353,8 +353,8 @@ export function GamePlayer() {
           {mode === "multiple" && (isPlaying || isChecking || isRevealed) && round && (
             <div className="grid gap-3">
               {round.options.map((opt) => {
-                const isAnswer = isRevealed && reveal?.answer === opt;
-                const isPicked = opt === picked;
+                const isAnswer = isRevealed && reveal?.answer === opt.title;
+                const isPicked = opt.title === picked;
                 let cls = "btn-ghost";
                 if (isRevealed) {
                   if (isAnswer) cls = "btn border border-good bg-good/20 text-good";
@@ -363,14 +363,15 @@ export function GamePlayer() {
                 }
                 return (
                   <button
-                    key={opt}
+                    key={`${opt.title}—${opt.artist}`}
                     disabled={!isPlaying}
-                    onClick={() => answer(opt)}
-                    className={`${cls} w-full px-5 py-4 text-left text-base ${
+                    onClick={() => answer(opt.title)}
+                    className={`${cls} w-full px-5 py-3.5 text-left ${
                       isRevealed && isPicked && !isAnswer ? "animate-shake" : ""
                     }`}
                   >
-                    {opt}
+                    <span className="block text-base font-medium leading-tight">{opt.title}</span>
+                    <span className="mt-0.5 block text-sm text-muted">{opt.artist}</span>
                   </button>
                 );
               })}
@@ -501,6 +502,15 @@ function SetupScreen({
             {fam.emoji} {fam.label}
           </h3>
           <div className="mt-2 grid grid-cols-2 gap-2">
+            {/* "All <family>" — plays across every sub-genre in the family. */}
+            {fam.genres.length > 1 && (
+              <GenrePill
+                active={genre === `family:${fam.id}`}
+                onClick={() => setGenre(`family:${fam.id}`)}
+                label={`${fam.emoji} All ${fam.label}`}
+                count={fam.count}
+              />
+            )}
             {fam.genres.map((g) => (
               <GenrePill
                 key={g.genre}

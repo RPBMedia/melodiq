@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { SONGS_PER_GAME, OPTIONS_PER_ROUND } from "@/lib/scoring";
 import { resolvePreview, isEphemeralPreview } from "@/lib/preview";
+import { familyOf } from "@/lib/genres";
+
+/** A family selection (the "All Metal" pill) arrives as "family:<id>". */
+const FAMILY_PREFIX = "family:";
 
 export type RoundPayload = {
   order: number;
@@ -8,9 +12,10 @@ export type RoundPayload = {
   previewUrl: string | null;
   coverColor: string;
   artist: string;
-  // Multiple-choice options (titles), shuffled. The correct title is NOT sent;
-  // the server reveals it only after an answer, so the client can't peek.
-  options: string[];
+  // Multiple-choice options (title + artist), shuffled. The correct title is
+  // still revealed only after an answer (via the answer endpoint), so the
+  // client can't tell which option is right up front.
+  options: { title: string; artist: string }[];
 };
 
 export type BuiltGame = {
@@ -38,9 +43,16 @@ export async function buildGame(genre?: string | null): Promise<BuiltGame> {
     throw new Error("Song pool is too small. Run `npm run db:seed`.");
   }
 
+  // `genre` may be a specific sub-genre ("heavy metal") OR a whole family via
+  // the "family:<id>" form ("family:metal" = every metal sub-genre).
+  const familyFilter = genre?.startsWith(FAMILY_PREFIX)
+    ? genre.slice(FAMILY_PREFIX.length)
+    : null;
   const inGenre =
     genre && genre !== "all"
-      ? all.filter((s) => s.genre.toLowerCase() === genre.toLowerCase())
+      ? familyFilter
+        ? all.filter((s) => familyOf(s.genre) === familyFilter)
+        : all.filter((s) => s.genre.toLowerCase() === genre.toLowerCase())
       : all;
 
   const pool = inGenre.length >= OPTIONS_PER_ROUND ? inGenre : all;
@@ -80,14 +92,14 @@ export async function buildGame(genre?: string | null): Promise<BuiltGame> {
     }
     const decoys = shuffle(decoyPool)
       .slice(0, OPTIONS_PER_ROUND - 1)
-      .map((s) => s.title);
+      .map((s) => ({ title: s.title, artist: s.artist }));
     return {
       order,
       songId: song.id,
       previewUrl: song.previewUrl,
       coverColor: song.coverColor,
       artist: song.artist,
-      options: shuffle([song.title, ...decoys]),
+      options: shuffle([{ title: song.title, artist: song.artist }, ...decoys]),
     };
   });
 
