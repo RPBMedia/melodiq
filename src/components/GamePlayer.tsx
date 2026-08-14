@@ -69,6 +69,20 @@ export function GamePlayer() {
     rafRef.current = null;
   }, []);
 
+  // Own the audio element imperatively (a plain Audio object), OUTSIDE React's
+  // render tree, so the ~60fps clock re-renders can never reset or interrupt
+  // playback. Created once; src is set at play time inside the user gesture.
+  useEffect(() => {
+    const a = new Audio();
+    a.preload = "auto";
+    audioRef.current = a;
+    return () => {
+      a.pause();
+      a.src = "";
+      audioRef.current = null;
+    };
+  }, []);
+
   // ----- Start a game from the setup screen -----
   const startGame = useCallback(async () => {
     setPhase("loading");
@@ -161,6 +175,9 @@ export function GamePlayer() {
     // unlocks the <audio> element so later rounds can play programmatically.
     const audio = audioRef.current;
     if (audio && round.previewUrl) {
+      // Assign the source here (in the gesture) rather than via React, so the
+      // element is never mid-reload from a render when we call play().
+      if (audio.src !== round.previewUrl) audio.src = round.previewUrl;
       try {
         audio.currentTime = 0;
       } catch {
@@ -294,9 +311,10 @@ export function GamePlayer() {
 
       <ProgressDots total={rounds.length} current={idx} />
 
-      {/* Native playback (no crossOrigin / Web Audio) so previews from every
-          provider actually make sound — see Visualizer for the CORS rationale. */}
-      <audio ref={audioRef} src={round?.previewUrl ?? undefined} preload="auto" />
+      {/* Audio is a plain Audio() object owned imperatively (see the effect
+          above) — deliberately NOT rendered here, so the clock's re-renders
+          can't interrupt it. Native playback (no Web Audio) keeps every
+          provider's preview audible. */}
 
       <div className="card relative overflow-hidden p-6">
         <div
