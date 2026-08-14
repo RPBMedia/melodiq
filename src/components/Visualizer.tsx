@@ -4,59 +4,23 @@ import { useEffect, useRef } from "react";
 
 /**
  * The signature element: a row of spectrum bars that dance while a clip plays.
- * When a real <audio> element is actively playing a CORS-friendly source we
- * drive the bars from live Web Audio frequency data. Otherwise (silent/mock
- * rounds, blocked autoplay, cross-origin) we fall back to a smooth synthetic
- * spectrum so every round still feels alive.
+ *
+ * Driven by a smooth SYNTHETIC spectrum rather than live Web Audio on purpose:
+ * routing an <audio> element through `createMediaElementSource` makes the Web
+ * Audio graph output SILENCE for any cross-origin source whose CDN omits CORS
+ * headers (e.g. Deezer previews). Playing the audio natively guarantees sound
+ * for every preview provider; the bars animate in sympathy without touching the
+ * audio path.
  */
 export function Visualizer({
   active,
-  audioEl,
   bars = 28,
 }: {
   active: boolean;
-  audioEl?: HTMLAudioElement | null;
   bars?: number;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
-  const ctxRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  // Typed as Uint8Array<ArrayBuffer> (not the default ArrayBufferLike) so it
-  // matches AnalyserNode.getByteFrequencyData's parameter in the current DOM lib.
-  const dataRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
-  const audioElRef = useRef<HTMLAudioElement | null>(null);
-
-  // Keep the latest audio element reference for the animation loop.
-  audioElRef.current = audioEl ?? null;
-
-  // Attach a Web Audio analyser once we have a real element.
-  useEffect(() => {
-    if (!audioEl || analyserRef.current) return;
-    try {
-      const Ctx =
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext })
-          .webkitAudioContext;
-      if (!Ctx) return;
-      const ctx = new Ctx();
-      const src = ctx.createMediaElementSource(audioEl);
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 64;
-      src.connect(analyser);
-      analyser.connect(ctx.destination);
-      ctxRef.current = ctx;
-      analyserRef.current = analyser;
-      dataRef.current = new Uint8Array(analyser.frequencyBinCount);
-    } catch {
-      // Autoplay/CORS restrictions — synthetic fallback will handle it.
-    }
-  }, [audioEl]);
-
-  // Resume a suspended context when a round starts (browsers start it paused).
-  useEffect(() => {
-    if (active) ctxRef.current?.resume().catch(() => {});
-  }, [active]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -66,20 +30,10 @@ export function Visualizer({
 
     const tick = () => {
       t += 0.08;
-      const analyser = analyserRef.current;
-      const data = dataRef.current;
-      const audio = audioElRef.current;
-      const realPlaying =
-        active && !!analyser && !!data && !!audio && !audio.paused && !!audio.currentSrc;
-
-      if (realPlaying && analyser && data) analyser.getByteFrequencyData(data);
-
       children.forEach((bar, i) => {
         let h: number;
         if (!active) {
           h = 14;
-        } else if (realPlaying && data) {
-          h = 14 + (data[i % data.length] / 255) * 80;
         } else {
           const v =
             Math.sin(t + i * 0.5) * 0.5 +

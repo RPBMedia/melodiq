@@ -292,7 +292,9 @@ export function GamePlayer() {
 
       <ProgressDots total={rounds.length} current={idx} />
 
-      <audio ref={audioRef} src={round?.previewUrl ?? undefined} preload="auto" crossOrigin="anonymous" />
+      {/* Native playback (no crossOrigin / Web Audio) so previews from every
+          provider actually make sound — see Visualizer for the CORS rationale. */}
+      <audio ref={audioRef} src={round?.previewUrl ?? undefined} preload="auto" />
 
       <div className="card relative overflow-hidden p-6">
         <div
@@ -306,7 +308,7 @@ export function GamePlayer() {
           </div>
 
           <div className="my-5 flex flex-col items-center">
-            <Visualizer active={isPlaying} audioEl={audioRef.current} />
+            <Visualizer active={isPlaying} />
             {isPlaying && (
               <div className="mt-3 text-center">
                 <div className={`font-display text-4xl font-bold tabular-nums ${scoreClass}`}>+{liveScore}</div>
