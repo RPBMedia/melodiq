@@ -485,67 +485,80 @@ function SetupScreen({
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mx-auto max-w-md"
+      className="mx-auto max-w-md lg:max-w-5xl"
     >
-      <h1 className="font-display text-2xl font-bold">New game</h1>
+      <h1 className="font-display text-2xl font-bold lg:text-3xl">New game</h1>
       <p className="mt-1 text-muted">{count} songs · 30 seconds each · faster = more points.</p>
 
-      <h2 className="mt-7 text-sm font-semibold uppercase tracking-wider text-muted">How to answer</h2>
-      <div className="mt-3 grid grid-cols-2 gap-3">
-        <Choice active={mode === "multiple"} onClick={() => setMode("multiple")} title="Multiple choice" sub="Pick from 4 options" />
-        <Choice active={mode === "typing"} onClick={() => setMode("typing")} title="Type the title" sub="Harder · type it in" />
-      </div>
+      {/* On desktop: config rail on the left, the big playlist picker fills the rest. */}
+      <div className="mt-7 lg:grid lg:grid-cols-[minmax(260px,300px)_1fr] lg:gap-10">
+        {/* Config rail */}
+        <div className="lg:sticky lg:top-6 lg:self-start">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">How to answer</h2>
+          <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-1">
+            <Choice active={mode === "multiple"} onClick={() => setMode("multiple")} title="Multiple choice" sub="Pick from 4 options" />
+            <Choice active={mode === "typing"} onClick={() => setMode("typing")} title="Type the title" sub="Harder · type it in" />
+          </div>
 
-      <h2 className="mt-7 text-sm font-semibold uppercase tracking-wider text-muted">Game length</h2>
-      <div className="mt-3 grid grid-cols-3 gap-3">
-        {[10, 20, 30].map((n) => (
-          <button
-            key={n}
-            onClick={() => setCount(n)}
-            className={`rounded-2xl border p-4 text-center transition-all active:scale-[0.98] ${
-              count === n ? "border-violet bg-violet/15 shadow-glow" : "border-line bg-surface2/50 hover:bg-surface2"
-            }`}
-          >
-            <div className="font-display text-xl font-bold tabular-nums">{n}</div>
-            <div className="text-xs text-muted">songs</div>
-          </button>
-        ))}
-      </div>
-
-      <h2 className="mt-7 text-sm font-semibold uppercase tracking-wider text-muted">Playlist</h2>
-      <div className="mt-3">
-        <GenrePill active={genre === "all"} onClick={() => setGenre("all")} label="🎧 All genres" count={total} />
-      </div>
-      {families === null && <p className="mt-3 text-sm text-muted">Loading genres…</p>}
-      {(families ?? []).map((fam) => (
-        <div key={fam.id} className="mt-5">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted" style={{ color: fam.accent }}>
-            {fam.emoji} {fam.label}
-          </h3>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            {/* "All <family>" — plays across every sub-genre in the family. */}
-            {fam.genres.length > 1 && (
-              <GenrePill
-                active={genre === `family:${fam.id}`}
-                onClick={() => setGenre(`family:${fam.id}`)}
-                label={`${fam.emoji} All ${fam.label}`}
-                count={fam.count}
-              />
-            )}
-            {fam.genres.map((g) => (
-              <GenrePill
-                key={g.genre}
-                active={genre === g.genre}
-                onClick={() => setGenre(g.genre)}
-                label={`${g.emoji} ${g.label}`}
-                count={g.count}
-              />
+          <h2 className="mt-7 text-sm font-semibold uppercase tracking-wider text-muted">Game length</h2>
+          <div className="mt-3 grid grid-cols-3 gap-3">
+            {[10, 20, 30].map((n) => (
+              <button
+                key={n}
+                onClick={() => setCount(n)}
+                className={`rounded-2xl border p-4 text-center transition-all active:scale-[0.98] ${
+                  count === n ? "border-violet bg-violet/15 shadow-glow" : "border-line bg-surface2/50 hover:bg-surface2"
+                }`}
+              >
+                <div className="font-display text-xl font-bold tabular-nums">{n}</div>
+                <div className="text-xs text-muted">songs</div>
+              </button>
             ))}
           </div>
-        </div>
-      ))}
 
-      <button onClick={onStart} className="btn-primary mt-8 w-full px-6 py-5 text-lg">▶ Start game</button>
+          {/* Desktop-only start button lives with the config for easy reach. */}
+          <button onClick={onStart} className="btn-primary mt-7 hidden w-full px-6 py-5 text-lg lg:block">▶ Start game</button>
+        </div>
+
+        {/* Playlist picker */}
+        <div className="mt-7 lg:mt-0">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">Playlist</h2>
+          <div className="mt-3">
+            <GenrePill active={genre === "all"} onClick={() => setGenre("all")} label="🎧 All genres" count={total} />
+          </div>
+          {families === null && <p className="mt-3 text-sm text-muted">Loading genres…</p>}
+          {(families ?? []).map((fam) => (
+            <div key={fam.id} className="mt-5">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted" style={{ color: fam.accent }}>
+                {fam.emoji} {fam.label}
+              </h3>
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {/* "All <family>" — plays across every sub-genre in the family. */}
+                {fam.genres.length > 1 && (
+                  <GenrePill
+                    active={genre === `family:${fam.id}`}
+                    onClick={() => setGenre(`family:${fam.id}`)}
+                    label={`${fam.emoji} All ${fam.label}`}
+                    count={fam.count}
+                  />
+                )}
+                {fam.genres.map((g) => (
+                  <GenrePill
+                    key={g.genre}
+                    active={genre === g.genre}
+                    onClick={() => setGenre(g.genre)}
+                    label={`${g.emoji} ${g.label}`}
+                    count={g.count}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Mobile start button — full width at the bottom of the stacked flow. */}
+      <button onClick={onStart} className="btn-primary mt-8 w-full px-6 py-5 text-lg lg:hidden">▶ Start game</button>
     </motion.div>
   );
 }

@@ -21,7 +21,7 @@ export default async function Dashboard() {
   const firstName = (session.user.name ?? "there").split(" ")[0];
 
   return (
-    <main className="mx-auto max-w-md px-5 pb-12 pt-10">
+    <main className="mx-auto max-w-md px-5 pb-12 pt-10 lg:max-w-4xl lg:px-8">
       <header className="flex items-center justify-between">
         <Logo className="text-xl" />
         <div className="flex items-center gap-3">
@@ -53,7 +53,7 @@ export default async function Dashboard() {
         ▶ Start game
       </Link>
 
-      <section className="mt-6 grid gap-3">
+      <section className="mt-6 grid gap-3 sm:grid-cols-3">
         <DashboardCard
           index={0}
           href="/play"

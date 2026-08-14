@@ -10,7 +10,7 @@ export default async function PlayPage() {
   if (!session?.user?.id) redirect("/");
 
   return (
-    <main className="mx-auto max-w-md px-5 pb-12 pt-8">
+    <main className="mx-auto max-w-md px-5 pb-12 pt-8 lg:max-w-5xl lg:px-8">
       <div className="mb-6">
         <Link href="/dashboard" className="text-sm text-muted hover:text-ink">
           ← Dashboard

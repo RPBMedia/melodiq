@@ -9,13 +9,13 @@ export default async function Landing() {
   if (session?.user) redirect("/dashboard");
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-10 pt-16">
+    <main className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-10 pt-16 lg:max-w-xl">
       <div className="flex flex-1 flex-col items-center justify-center text-center">
         <Logo className="text-2xl" />
-        <h1 className="mt-10 font-display text-4xl font-bold leading-tight">
+        <h1 className="mt-10 font-display text-4xl font-bold leading-tight lg:text-5xl">
           Hear it. <span className="grad-text">Name it.</span><br />Beat the clock.
         </h1>
-        <p className="mt-4 max-w-xs text-muted">
+        <p className="mt-4 max-w-xs text-muted lg:max-w-sm lg:text-lg">
           A 30-second clip. Four choices. The faster you guess the song, the more
           you score.
         </p>
@@ -24,7 +24,7 @@ export default async function Landing() {
           <Visualizer active />
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-2 text-left text-xs text-muted">
+        <div className="mt-4 grid w-full grid-cols-2 gap-2 text-left text-xs text-muted sm:grid-cols-4">
           <Tier t="0–5s" p="100" />
           <Tier t="6–10s" p="80" />
           <Tier t="11–20s" p="50" />

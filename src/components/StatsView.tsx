@@ -44,7 +44,7 @@ export function StatsView() {
 
   return (
     <>
-      <div className="mt-6 grid grid-cols-2 gap-3">
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Big label="Best score" value={stats.bestScore} />
         <Big label="Games played" value={stats.gamesPlayed} />
         <Big label="Avg score" value={stats.avgScore} />

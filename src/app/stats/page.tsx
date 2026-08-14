@@ -11,7 +11,7 @@ export default async function StatsPage() {
   if (!session?.user?.id) redirect("/");
 
   return (
-    <main className="mx-auto max-w-md px-5 pb-12 pt-10">
+    <main className="mx-auto max-w-md px-5 pb-12 pt-10 lg:max-w-2xl lg:px-8">
       <header className="flex items-center justify-between">
         <Logo className="text-xl" />
         <Link href="/dashboard" className="text-sm text-muted hover:text-ink">
