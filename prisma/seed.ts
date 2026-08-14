@@ -5,7 +5,10 @@ const prisma = new PrismaClient();
 
 async function main() {
   console.log(`Seeding ${SONGS.length} songs...`);
-  // Reset the pool so re-running seed is idempotent.
+  // Reset the pool so re-running seed is idempotent. Clear Rounds first — they
+  // reference Songs (FK), so deleting songs would otherwise fail on a DB that
+  // has games played. GameSession rows (and their leaderboard scores) survive.
+  await prisma.round.deleteMany();
   await prisma.song.deleteMany();
   for (const s of SONGS) {
     await prisma.song.create({
