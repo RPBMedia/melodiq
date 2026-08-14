@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { SONGS_PER_GAME, OPTIONS_PER_ROUND } from "@/lib/scoring";
+import { resolvePreview, isEphemeralPreview } from "@/lib/preview";
 
 export type RoundPayload = {
   order: number;
@@ -45,6 +46,31 @@ export async function buildGame(genre?: string | null): Promise<BuiltGame> {
   const pool = inGenre.length >= OPTIONS_PER_ROUND ? inGenre : all;
 
   const picks = shuffle(pool).slice(0, Math.min(SONGS_PER_GAME, pool.length));
+
+  // Freshen preview URLs at serve time: Deezer URLs expire (403 → silence), so
+  // re-resolve any missing/ephemeral one now. Stable iTunes URLs are kept. Done
+  // in parallel; a freshly-found stable (iTunes) URL is written back so the pool
+  // self-heals and needs no refresh next time. Best-effort — never blocks a game.
+  await Promise.all(
+    picks.map(async (song) => {
+      if (song.previewUrl && !isEphemeralPreview(song.previewUrl)) return;
+      try {
+        const fresh = await resolvePreview(song.title, song.artist);
+        if (!fresh) return;
+        song.previewUrl = fresh.previewUrl;
+        if (!isEphemeralPreview(fresh.previewUrl)) {
+          prisma.song
+            .update({
+              where: { id: song.id },
+              data: { previewUrl: fresh.previewUrl, provider: fresh.provider },
+            })
+            .catch(() => {});
+        }
+      } catch {
+        /* keep whatever we had */
+      }
+    }),
+  );
 
   const rounds: RoundPayload[] = picks.map((song, order) => {
     // Prefer same-pool decoys; fall back to the full pool if needed.
