@@ -367,4 +367,69 @@ export const SONGS: SeedSong[] = [
   { title: "Wish", artist: "Nine Inch Nails", genre: "industrial", year: 1992, coverColor: "#22D3EE", difficulty: 2 },
   { title: "Stripped", artist: "Rammstein", genre: "industrial", year: 1998, coverColor: "#22D3EE", difficulty: 2 },
   { title: "Firestarter", artist: "The Prodigy", genre: "industrial", year: 1996, coverColor: "#22D3EE", difficulty: 2 },
+
+  // ---- M2 taxonomy batch 4 (deepen metal family + thin genres) ----
+  // heavy metal
+  { title: "Run to the Hills", artist: "Iron Maiden", genre: "heavy metal", year: 1982, coverColor: "#8B5CF6", difficulty: 2 },
+  { title: "The Number of the Beast", artist: "Iron Maiden", genre: "heavy metal", year: 1982, coverColor: "#8B5CF6", difficulty: 2 },
+  { title: "2 Minutes to Midnight", artist: "Iron Maiden", genre: "heavy metal", year: 1984, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Aces High", artist: "Iron Maiden", genre: "heavy metal", year: 1984, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "One", artist: "Metallica", genre: "heavy metal", year: 1988, coverColor: "#8B5CF6", difficulty: 1 },
+  { title: "For Whom the Bell Tolls", artist: "Metallica", genre: "heavy metal", year: 1984, coverColor: "#8B5CF6", difficulty: 2 },
+  { title: "Ride the Lightning", artist: "Metallica", genre: "heavy metal", year: 1984, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Breaking the Law", artist: "Judas Priest", genre: "heavy metal", year: 1980, coverColor: "#8B5CF6", difficulty: 2 },
+  { title: "Peace Sells", artist: "Megadeth", genre: "heavy metal", year: 1986, coverColor: "#8B5CF6", difficulty: 2 },
+  { title: "War Pigs", artist: "Black Sabbath", genre: "heavy metal", year: 1970, coverColor: "#8B5CF6", difficulty: 1 },
+  // hard rock
+  { title: "Highway to Hell", artist: "AC/DC", genre: "hard rock", year: 1979, coverColor: "#FB7185", difficulty: 1 },
+  { title: "T.N.T.", artist: "AC/DC", genre: "hard rock", year: 1975, coverColor: "#FB7185", difficulty: 2 },
+  { title: "Dream On", artist: "Aerosmith", genre: "hard rock", year: 1973, coverColor: "#FB7185", difficulty: 1 },
+  { title: "Sweet Emotion", artist: "Aerosmith", genre: "hard rock", year: 1975, coverColor: "#FB7185", difficulty: 2 },
+  { title: "Kashmir", artist: "Led Zeppelin", genre: "hard rock", year: 1975, coverColor: "#FB7185", difficulty: 2 },
+  { title: "Jump", artist: "Van Halen", genre: "hard rock", year: 1984, coverColor: "#FB7185", difficulty: 1 },
+  { title: "Free Bird", artist: "Lynyrd Skynyrd", genre: "hard rock", year: 1973, coverColor: "#FB7185", difficulty: 1 },
+  { title: "Sweet Home Alabama", artist: "Lynyrd Skynyrd", genre: "hard rock", year: 1974, coverColor: "#FB7185", difficulty: 1 },
+  // death metal
+  { title: "Spirit Crusher", artist: "Death", genre: "death metal", year: 1998, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "The Bleeding", artist: "Cannibal Corpse", genre: "death metal", year: 1994, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Left Hand Path", artist: "Entombed", genre: "death metal", year: 1990, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Only for the Weak", artist: "In Flames", genre: "death metal", year: 2000, coverColor: "#8B5CF6", difficulty: 3 },
+  // black metal
+  { title: "A Blaze in the Northern Sky", artist: "Darkthrone", genre: "black metal", year: 1992, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Det Som Engang Var", artist: "Burzum", genre: "black metal", year: 1993, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Deathcrush", artist: "Mayhem", genre: "black metal", year: 1987, coverColor: "#8B5CF6", difficulty: 3 },
+  // folk metal
+  { title: "Wooden Pints", artist: "Korpiklaani", genre: "folk metal", year: 2003, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Guardians of Fate", artist: "Ensiferum", genre: "folk metal", year: 2007, coverColor: "#8B5CF6", difficulty: 3 },
+  // industrial
+  { title: "The Perfect Drug", artist: "Nine Inch Nails", genre: "industrial", year: 1997, coverColor: "#22D3EE", difficulty: 2 },
+  { title: "Mein Teil", artist: "Rammstein", genre: "industrial", year: 2004, coverColor: "#22D3EE", difficulty: 2 },
+  { title: "Assimilate", artist: "Skinny Puppy", genre: "industrial", year: 1985, coverColor: "#22D3EE", difficulty: 3 },
+  { title: "Headhunter", artist: "Front 242", genre: "industrial", year: 1988, coverColor: "#22D3EE", difficulty: 3 },
+  // new age
+  { title: "Caribbean Blue", artist: "Enya", genre: "new-age", year: 1991, coverColor: "#34D399", difficulty: 2 },
+  { title: "Cristofori's Dream", artist: "David Lanz", genre: "new-age", year: 1988, coverColor: "#34D399", difficulty: 3 },
+  { title: "Experience", artist: "Ludovico Einaudi", genre: "new-age", year: 2013, coverColor: "#34D399", difficulty: 3 },
+  // indie
+  { title: "Reptilia", artist: "The Strokes", genre: "indie", year: 2003, coverColor: "#FF2D87", difficulty: 2 },
+  { title: "Fluorescent Adolescent", artist: "Arctic Monkeys", genre: "indie", year: 2007, coverColor: "#FF2D87", difficulty: 2 },
+  { title: "1901", artist: "Phoenix", genre: "indie", year: 2009, coverColor: "#FF2D87", difficulty: 2 },
+  { title: "Midnight City", artist: "M83", genre: "indie", year: 2011, coverColor: "#FF2D87", difficulty: 1 },
+  { title: "Sweater Weather", artist: "The Neighbourhood", genre: "indie", year: 2013, coverColor: "#FF2D87", difficulty: 1 },
+  { title: "Riptide", artist: "Vance Joy", genre: "indie", year: 2013, coverColor: "#FF2D87", difficulty: 1 },
+  // jazz
+  { title: "Mack the Knife", artist: "Bobby Darin", genre: "jazz", year: 1959, coverColor: "#FBBF24", difficulty: 1 },
+  { title: "Moanin'", artist: "Art Blakey", genre: "jazz", year: 1958, coverColor: "#FBBF24", difficulty: 3 },
+  { title: "Blue Bossa", artist: "Kenny Dorham", genre: "jazz", year: 1963, coverColor: "#FBBF24", difficulty: 3 },
+  { title: "Birdland", artist: "Weather Report", genre: "jazz", year: 1977, coverColor: "#FBBF24", difficulty: 2 },
+  // blues
+  { title: "Killing Floor", artist: "Howlin' Wolf", genre: "blues", year: 1964, coverColor: "#FBBF24", difficulty: 3 },
+  { title: "Little Red Rooster", artist: "Howlin' Wolf", genre: "blues", year: 1961, coverColor: "#FBBF24", difficulty: 3 },
+  { title: "Statesboro Blues", artist: "The Allman Brothers Band", genre: "blues", year: 1971, coverColor: "#FBBF24", difficulty: 2 },
+  { title: "Sweet Little Angel", artist: "B.B. King", genre: "blues", year: 1956, coverColor: "#FBBF24", difficulty: 3 },
+  // classical
+  { title: "Flight of the Bumblebee", artist: "Nikolai Rimsky-Korsakov", genre: "classical", year: 1900, coverColor: "#34D399", difficulty: 2 },
+  { title: "Habanera (Carmen)", artist: "Georges Bizet", genre: "classical", year: 1875, coverColor: "#34D399", difficulty: 2 },
+  { title: "Morning Mood (Peer Gynt)", artist: "Edvard Grieg", genre: "classical", year: 1875, coverColor: "#34D399", difficulty: 2 },
+  { title: "The Blue Danube", artist: "Johann Strauss II", genre: "classical", year: 1866, coverColor: "#34D399", difficulty: 2 },
 ];
