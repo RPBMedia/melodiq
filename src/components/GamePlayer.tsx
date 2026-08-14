@@ -54,7 +54,6 @@ export function GamePlayer() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const startRef = useRef<number>(0);
   const rafRef = useRef<number | null>(null);
-  const autoPlayRef = useRef(false);
   const [finalResult, setFinalResult] = useState<{
     score: number;
     correctCount: number;
@@ -204,20 +203,19 @@ export function GamePlayer() {
   }, [gameId]);
 
   const next = useCallback(() => {
-    if (idx + 1 >= rounds.length) void finishGame();
-    else {
-      autoPlayRef.current = true;
-      setIdx((i) => i + 1);
+    if (idx + 1 >= rounds.length) {
+      void finishGame();
+      return;
     }
+    // Advance to the next round's "ready" state — the user taps "Play clip" to
+    // start it, so playback always begins inside a user gesture (reliable
+    // native autoplay across browsers, iOS included).
+    setReveal(null);
+    setPicked(null);
+    setTyped("");
+    setIdx((i) => i + 1);
+    setPhase("ready");
   }, [idx, rounds.length, finishGame]);
-
-  // Auto-play when idx advances after "Next song"
-  useEffect(() => {
-    if (autoPlayRef.current && rounds[idx]) {
-      autoPlayRef.current = false;
-      void playRound();
-    }
-  }, [idx, rounds, playRound]);
 
   // ---------- Render ----------
   if (phase === "setup") {
