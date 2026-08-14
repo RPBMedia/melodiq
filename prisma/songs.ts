@@ -432,4 +432,71 @@ export const SONGS: SeedSong[] = [
   { title: "Habanera (Carmen)", artist: "Georges Bizet", genre: "classical", year: 1875, coverColor: "#34D399", difficulty: 2 },
   { title: "Morning Mood (Peer Gynt)", artist: "Edvard Grieg", genre: "classical", year: 1875, coverColor: "#34D399", difficulty: 2 },
   { title: "The Blue Danube", artist: "Johann Strauss II", genre: "classical", year: 1866, coverColor: "#34D399", difficulty: 2 },
+
+  // ---- M2 taxonomy batch 5 (breadth) ----
+  // pop
+  { title: "I Wanna Dance with Somebody", artist: "Whitney Houston", genre: "pop", year: 1987, coverColor: "#FF2D87", difficulty: 1 },
+  { title: "Girls Just Want to Have Fun", artist: "Cyndi Lauper", genre: "pop", year: 1983, coverColor: "#FF2D87", difficulty: 1 },
+  { title: "Wannabe", artist: "Spice Girls", genre: "pop", year: 1996, coverColor: "#FF2D87", difficulty: 1 },
+  { title: "...Baby One More Time", artist: "Britney Spears", genre: "pop", year: 1998, coverColor: "#FF2D87", difficulty: 1 },
+  { title: "Vogue", artist: "Madonna", genre: "pop", year: 1990, coverColor: "#FF2D87", difficulty: 2 },
+  { title: "Teenage Dream", artist: "Katy Perry", genre: "pop", year: 2010, coverColor: "#FF2D87", difficulty: 1 },
+  { title: "Just Dance", artist: "Lady Gaga", genre: "pop", year: 2008, coverColor: "#FF2D87", difficulty: 2 },
+  { title: "Physical", artist: "Dua Lipa", genre: "pop", year: 2020, coverColor: "#FF2D87", difficulty: 2 },
+  // rock
+  { title: "Paint It Black", artist: "The Rolling Stones", genre: "rock", year: 1966, coverColor: "#FB7185", difficulty: 1 },
+  { title: "Purple Haze", artist: "Jimi Hendrix", genre: "rock", year: 1967, coverColor: "#FB7185", difficulty: 1 },
+  { title: "Come As You Are", artist: "Nirvana", genre: "rock", year: 1991, coverColor: "#FB7185", difficulty: 1 },
+  { title: "Creep", artist: "Radiohead", genre: "rock", year: 1992, coverColor: "#FB7185", difficulty: 1 },
+  { title: "Learn to Fly", artist: "Foo Fighters", genre: "rock", year: 1999, coverColor: "#FB7185", difficulty: 2 },
+  { title: "Zombie", artist: "The Cranberries", genre: "rock", year: 1994, coverColor: "#FB7185", difficulty: 1 },
+  { title: "Killing in the Name", artist: "Rage Against the Machine", genre: "rock", year: 1992, coverColor: "#FB7185", difficulty: 1 },
+  { title: "The Scientist", artist: "Coldplay", genre: "rock", year: 2002, coverColor: "#FB7185", difficulty: 1 },
+  // heavy metal
+  { title: "Battery", artist: "Metallica", genre: "heavy metal", year: 1986, coverColor: "#8B5CF6", difficulty: 2 },
+  { title: "Mr. Crowley", artist: "Ozzy Osbourne", genre: "heavy metal", year: 1980, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Electric Eye", artist: "Judas Priest", genre: "heavy metal", year: 1982, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Hangar 18", artist: "Megadeth", genre: "heavy metal", year: 1990, coverColor: "#8B5CF6", difficulty: 3 },
+  { title: "Wasted Years", artist: "Iron Maiden", genre: "heavy metal", year: 1986, coverColor: "#8B5CF6", difficulty: 3 },
+  // hard rock
+  { title: "Black Dog", artist: "Led Zeppelin", genre: "hard rock", year: 1971, coverColor: "#FB7185", difficulty: 2 },
+  { title: "Rock and Roll", artist: "Led Zeppelin", genre: "hard rock", year: 1971, coverColor: "#FB7185", difficulty: 2 },
+  { title: "Runnin' with the Devil", artist: "Van Halen", genre: "hard rock", year: 1978, coverColor: "#FB7185", difficulty: 2 },
+  { title: "You Really Got Me", artist: "The Kinks", genre: "hard rock", year: 1964, coverColor: "#FB7185", difficulty: 2 },
+  // jazz
+  { title: "Summertime", artist: "Ella Fitzgerald", genre: "jazz", year: 1968, coverColor: "#FBBF24", difficulty: 2 },
+  { title: "Freddie Freeloader", artist: "Miles Davis", genre: "jazz", year: 1959, coverColor: "#FBBF24", difficulty: 3 },
+  { title: "Georgia on My Mind", artist: "Ray Charles", genre: "jazz", year: 1960, coverColor: "#FBBF24", difficulty: 2 },
+  { title: "A Love Supreme", artist: "John Coltrane", genre: "jazz", year: 1965, coverColor: "#FBBF24", difficulty: 3 },
+  // blues
+  { title: "Mannish Boy", artist: "Muddy Waters", genre: "blues", year: 1955, coverColor: "#FBBF24", difficulty: 3 },
+  { title: "Dust My Broom", artist: "Elmore James", genre: "blues", year: 1951, coverColor: "#FBBF24", difficulty: 3 },
+  { title: "Texas Flood", artist: "Stevie Ray Vaughan", genre: "blues", year: 1983, coverColor: "#FBBF24", difficulty: 3 },
+  { title: "I Can't Quit You Baby", artist: "Otis Rush", genre: "blues", year: 1956, coverColor: "#FBBF24", difficulty: 3 },
+  // classical
+  { title: "Symphony No. 40", artist: "Wolfgang Amadeus Mozart", genre: "classical", year: 1788, coverColor: "#34D399", difficulty: 2 },
+  { title: "Requiem: Lacrimosa", artist: "Wolfgang Amadeus Mozart", genre: "classical", year: 1791, coverColor: "#34D399", difficulty: 3 },
+  { title: "William Tell Overture", artist: "Gioachino Rossini", genre: "classical", year: 1829, coverColor: "#34D399", difficulty: 2 },
+  { title: "Swan Lake", artist: "Pyotr Ilyich Tchaikovsky", genre: "classical", year: 1876, coverColor: "#34D399", difficulty: 2 },
+  // score / soundtrack
+  { title: "Duel of the Fates", artist: "John Williams", genre: "ost", year: 1999, coverColor: "#34D399", difficulty: 2 },
+  { title: "Cantina Band", artist: "John Williams", genre: "ost", year: 1977, coverColor: "#34D399", difficulty: 2 },
+  { title: "Schindler's List (Theme)", artist: "John Williams", genre: "ost", year: 1993, coverColor: "#34D399", difficulty: 2 },
+  { title: "The Godfather Waltz", artist: "Nino Rota", genre: "ost", year: 1972, coverColor: "#34D399", difficulty: 2 },
+  { title: "Married Life", artist: "Michael Giacchino", genre: "ost", year: 2009, coverColor: "#34D399", difficulty: 3 },
+  // folk
+  { title: "Mr. Tambourine Man", artist: "Bob Dylan", genre: "folk", year: 1965, coverColor: "#FB923C", difficulty: 2 },
+  { title: "Take Me Home, Country Roads", artist: "John Denver", genre: "folk", year: 1971, coverColor: "#FB923C", difficulty: 1 },
+  { title: "American Pie", artist: "Don McLean", genre: "folk", year: 1971, coverColor: "#FB923C", difficulty: 1 },
+  { title: "Homeward Bound", artist: "Simon & Garfunkel", genre: "folk", year: 1966, coverColor: "#FB923C", difficulty: 2 },
+  // indie
+  { title: "Float On", artist: "Modest Mouse", genre: "indie", year: 2004, coverColor: "#FF2D87", difficulty: 2 },
+  { title: "Young Folks", artist: "Peter Bjorn and John", genre: "indie", year: 2006, coverColor: "#FF2D87", difficulty: 2 },
+  { title: "Two Weeks", artist: "Grizzly Bear", genre: "indie", year: 2009, coverColor: "#FF2D87", difficulty: 3 },
+  { title: "Chamber of Reflection", artist: "Mac DeMarco", genre: "indie", year: 2014, coverColor: "#FF2D87", difficulty: 2 },
+  // pop rock
+  { title: "Chasing Cars", artist: "Snow Patrol", genre: "pop rock", year: 2006, coverColor: "#FB7185", difficulty: 1 },
+  { title: "Use Somebody", artist: "Kings of Leon", genre: "pop rock", year: 2008, coverColor: "#FB7185", difficulty: 1 },
+  { title: "Clocks", artist: "Coldplay", genre: "pop rock", year: 2002, coverColor: "#FB7185", difficulty: 1 },
+  { title: "Somewhere Only We Know", artist: "Keane", genre: "pop rock", year: 2004, coverColor: "#FB7185", difficulty: 2 },
 ];
