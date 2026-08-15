@@ -14,6 +14,7 @@ export type GenreFamilyId =
   | "rock"
   | "metal"
   | "electronic"
+  | "hip-hop"
   | "jazz-blues"
   | "classical-screen"
   | "folk";
@@ -45,6 +46,7 @@ const AMBER = "#FBBF24";
 const GREEN = "#34D399";
 const ROSE = "#FB7185";
 const ORANGE = "#FB923C";
+const ORCHID = "#E879F9";
 
 /** Families in display order, each with its sub-genres. */
 export const GENRE_FAMILIES: GenreFamily[] = [
@@ -87,7 +89,18 @@ export const GENRE_FAMILIES: GenreFamily[] = [
     emoji: "🎛️",
     accent: CYAN,
     genres: [
+      { id: "dance", label: "Dance / EDM", family: "electronic", emoji: "🎉", accent: CYAN, aliases: ["edm", "electronic", "house", "techno", "dance"] },
       { id: "industrial", label: "Industrial", family: "electronic", emoji: "🏭", accent: CYAN },
+    ],
+  },
+  {
+    id: "hip-hop",
+    label: "Hip-Hop & R&B",
+    emoji: "🎤",
+    accent: ORCHID,
+    genres: [
+      { id: "hip hop", label: "Hip-Hop", family: "hip-hop", emoji: "🎤", accent: ORCHID, aliases: ["hip-hop", "hiphop", "rap"] },
+      { id: "r&b", label: "R&B", family: "hip-hop", emoji: "💜", accent: ORCHID, aliases: ["rnb", "r and b", "soul", "r&b/soul"] },
     ],
   },
   {

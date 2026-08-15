@@ -14,15 +14,31 @@ export async function GET() {
       _count: { _all: true },
     });
 
-    const genres = grouped
-      .map((g) => ({
-        genre: g.genre,
-        label: genreLabel(g.genre),
-        family: familyOf(g.genre),
-        emoji: genreMeta(g.genre)?.emoji ?? "🎵",
-        count: g._count._all,
-      }))
-      .sort((a, b) => b.count - a.count);
+    // Fold raw stored strings onto their canonical taxonomy entry so casing and
+    // alias variants ("Pop" vs "pop", "hip-hop" vs "hip hop") collapse into a
+    // single pill with a summed count, rather than duplicate pills.
+    const byCanonical = new Map<
+      string,
+      { genre: string; label: string; family: ReturnType<typeof familyOf>; emoji: string; count: number }
+    >();
+    for (const g of grouped) {
+      const meta = genreMeta(g.genre);
+      const key = meta?.id ?? g.genre.toLowerCase();
+      const existing = byCanonical.get(key);
+      if (existing) {
+        existing.count += g._count._all;
+      } else {
+        byCanonical.set(key, {
+          genre: meta?.id ?? g.genre,
+          label: genreLabel(g.genre),
+          family: familyOf(g.genre),
+          emoji: meta?.emoji ?? "🎵",
+          count: g._count._all,
+        });
+      }
+    }
+
+    const genres = [...byCanonical.values()].sort((a, b) => b.count - a.count);
 
     const total = genres.reduce((s, g) => s + g.count, 0);
 

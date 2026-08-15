@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { SONGS_PER_GAME, OPTIONS_PER_ROUND } from "@/lib/scoring";
 import { resolvePreview, isEphemeralPreview } from "@/lib/preview";
-import { familyOf } from "@/lib/genres";
+import { familyOf, genreMeta } from "@/lib/genres";
 
 /** A family selection (the "All Metal" pill) arrives as "family:<id>". */
 const FAMILY_PREFIX = "family:";
@@ -51,11 +51,17 @@ export async function buildGame(
   const familyFilter = genre?.startsWith(FAMILY_PREFIX)
     ? genre.slice(FAMILY_PREFIX.length)
     : null;
+  // Resolve the requested sub-genre through the taxonomy so canonical ids and
+  // aliases/casing variants all match the same songs ("Pop" == "pop").
+  const targetGenre =
+    genre && genre !== "all" && !familyFilter
+      ? genreMeta(genre)?.id ?? genre.toLowerCase()
+      : null;
   const inGenre =
     genre && genre !== "all"
       ? familyFilter
         ? all.filter((s) => familyOf(s.genre) === familyFilter)
-        : all.filter((s) => s.genre.toLowerCase() === genre.toLowerCase())
+        : all.filter((s) => (genreMeta(s.genre)?.id ?? s.genre.toLowerCase()) === targetGenre)
       : all;
 
   const pool = inGenre.length >= OPTIONS_PER_ROUND ? inGenre : all;
