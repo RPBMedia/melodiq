@@ -29,8 +29,8 @@ type Phase =
 
 type Reveal = { correct: boolean; points: number; answer: string; artist: string };
 
-export function GamePlayer() {
-  const [phase, setPhase] = useState<Phase>("setup");
+export function GamePlayer({ daily = false }: { daily?: boolean }) {
+  const [phase, setPhase] = useState<Phase>(daily ? "loading" : "setup");
   const [error, setError] = useState<string | null>(null);
 
   // setup choices
@@ -59,6 +59,13 @@ export function GamePlayer() {
     score: number;
     correctCount: number;
     totalRounds: number;
+    xpEarned: number;
+    totalXp: number;
+    level: number;
+    leveledUp: boolean;
+    rank: string;
+    isDaily: boolean;
+    dailyStreak: number;
   } | null>(null);
 
   const round = rounds[idx];
@@ -84,18 +91,23 @@ export function GamePlayer() {
     };
   }, []);
 
-  // ----- Start a game from the setup screen -----
+  // ----- Start a game — the Daily Challenge, or a game from the setup screen -----
   const startGame = useCallback(async () => {
     setPhase("loading");
     setError(null);
     try {
-      const res = await fetch("/api/game/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ genre, mode, count }),
-      });
+      const res = daily
+        ? await fetch("/api/daily", { method: "POST" })
+        : await fetch("/api/game/start", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ genre, mode, count }),
+          });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
+        if (daily && res.status === 409) {
+          throw new Error("You've already played today's Daily Challenge — come back tomorrow! 🔥");
+        }
         throw new Error(data.error || "Could not start the game.");
       }
       const data = await res.json();
@@ -104,12 +116,23 @@ export function GamePlayer() {
       setTitlePool(data.titlePool ?? []);
       setIdx(0);
       setRunningScore(0);
+      if (daily) setMode("multiple"); // the Daily Challenge is always multiple-choice
       setPhase("ready");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
       setPhase("error");
     }
-  }, [genre, mode, count]);
+  }, [genre, mode, count, daily]);
+
+  // The Daily Challenge auto-starts (no setup screen). Guard so React's
+  // dev double-invoke can't fire two starts.
+  const autoStartedRef = useRef(false);
+  useEffect(() => {
+    if (daily && !autoStartedRef.current) {
+      autoStartedRef.current = true;
+      void startGame();
+    }
+  }, [daily, startGame]);
 
   // ----- Answer the current round (server scores it) -----
   const answer = useCallback(
@@ -211,6 +234,13 @@ export function GamePlayer() {
           score: data.score,
           correctCount: data.correctCount,
           totalRounds: data.totalRounds,
+          xpEarned: data.xpEarned ?? 0,
+          totalXp: data.totalXp ?? 0,
+          level: data.level ?? 1,
+          leveledUp: !!data.leveledUp,
+          rank: data.rank ?? "",
+          isDaily: !!data.isDaily,
+          dailyStreak: data.dailyStreak ?? 0,
         });
       } else {
         setError(data.error || "Could not save your score.");
@@ -253,11 +283,15 @@ export function GamePlayer() {
     return (
       <CenterMsg>
         <p className="font-semibold text-bad">{error}</p>
-        <p className="mt-2 text-sm text-muted">
-          If this persists, make sure the song pool is seeded (<code>npm run db:seed</code>).
-        </p>
+        {!daily && (
+          <p className="mt-2 text-sm text-muted">
+            If this persists, make sure the song pool is seeded (<code>npm run db:seed</code>).
+          </p>
+        )}
         <div className="mt-6 flex gap-3">
-          <button onClick={() => setPhase("setup")} className="btn-ghost px-5 py-3">Try again</button>
+          {!daily && (
+            <button onClick={() => setPhase("setup")} className="btn-ghost px-5 py-3">Try again</button>
+          )}
           <Link href="/dashboard" className="btn-ghost px-5 py-3">Dashboard</Link>
         </div>
       </CenterMsg>
@@ -269,27 +303,58 @@ export function GamePlayer() {
     const total = finalResult?.totalRounds ?? rounds.length;
     const correct = finalResult?.correctCount ?? 0;
     const pct = total ? Math.round((score / (total * 100)) * 100) : 0;
+    const xpEarned = finalResult?.xpEarned ?? 0;
+    const isDailyResult = finalResult?.isDaily ?? daily;
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         className="card mx-auto max-w-md p-7 text-center"
       >
-        <p className="pill mx-auto">Game complete</p>
+        <p className="pill mx-auto">{isDailyResult ? "Daily Challenge complete" : "Game complete"}</p>
         <h2 className="mt-4 font-display text-2xl font-bold">Nice ears.</h2>
         <div className="my-6">
           <div className="grad-text font-display text-6xl font-bold tabular-nums">{score}</div>
           <div className="text-sm text-muted">out of {total * 100} points</div>
         </div>
+
+        {/* XP + level-up */}
+        {finalResult && (
+          <div className="mb-4">
+            {finalResult.leveledUp && (
+              <motion.p
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-2 font-display text-lg font-semibold text-good"
+              >
+                ⬆️ Level up! You&rsquo;re now level {finalResult.level} · {finalResult.rank}
+              </motion.p>
+            )}
+            <p className="font-display text-2xl font-bold tabular-nums text-cyan">+{xpEarned} XP</p>
+            <p className="text-xs text-muted">
+              Level {finalResult.level} · {finalResult.rank}
+            </p>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-3 text-left">
           <Stat label="Correct" value={`${correct}/${total}`} />
-          <Stat label="Score rate" value={`${pct}%`} />
+          <Stat
+            label={isDailyResult ? "Daily streak" : "Score rate"}
+            value={isDailyResult ? `🔥 ${finalResult?.dailyStreak ?? 1}` : `${pct}%`}
+          />
         </div>
         {error && <p className="mt-4 text-sm text-bad">{error}</p>}
         <div className="mt-7 flex flex-col gap-3">
-          <button onClick={() => setPhase("setup")} className="btn-primary px-6 py-4">Play again</button>
+          {isDailyResult ? (
+            <Link href="/dashboard" className="btn-primary px-6 py-4">Back to dashboard</Link>
+          ) : (
+            <button onClick={() => setPhase("setup")} className="btn-primary px-6 py-4">Play again</button>
+          )}
           <Link href="/leaderboard" className="btn-ghost px-6 py-3">View leaderboard</Link>
-          <Link href="/dashboard" className="text-sm text-muted hover:text-ink">Back to dashboard</Link>
+          {!isDailyResult && (
+            <Link href="/dashboard" className="text-sm text-muted hover:text-ink">Back to dashboard</Link>
+          )}
         </div>
       </motion.div>
     );

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { SONGS_PER_GAME, OPTIONS_PER_ROUND } from "@/lib/scoring";
 import { resolvePreview, isEphemeralPreview } from "@/lib/preview";
 import { familyOf, genreMeta } from "@/lib/genres";
+import { hashSeed, mulberry32, seededShuffle } from "@/lib/progression";
 
 /** A family selection (the "All Metal" pill) arrives as "family:<id>". */
 const FAMILY_PREFIX = "family:";
@@ -23,25 +24,23 @@ export type BuiltGame = {
   titlePool: string[]; // candidate titles for the typing-mode autocomplete
 };
 
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
 /**
  * Build a fresh game. If `genre` is provided, songs and decoys are drawn from
  * that genre; otherwise the whole pool is used. Decoys top up from the full
  * pool if a genre is too small to supply enough distinct options.
+ *
+ * Pass `seed` (e.g. the Daily Challenge's date) to make the whole build
+ * deterministic — identical songs, decoys, and option order for everyone with
+ * the same seed. Without a seed it shuffles with Math.random as before.
  */
 export async function buildGame(
   genre?: string | null,
   count: number = SONGS_PER_GAME,
+  seed?: string,
 ): Promise<BuiltGame> {
-  const all = await prisma.song.findMany();
+  const rng = seed ? mulberry32(hashSeed(seed)) : Math.random;
+  const shuffle = <T>(arr: T[]): T[] => seededShuffle(arr, rng);
+  const all = await prisma.song.findMany({ orderBy: { id: "asc" } });
   if (all.length < OPTIONS_PER_ROUND) {
     throw new Error("Song pool is too small. Run `npm run db:seed`.");
   }

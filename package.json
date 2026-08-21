@@ -10,7 +10,8 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "fetch:previews": "node scripts/fetch-previews.mjs"
+    "fetch:previews": "node scripts/fetch-previews.mjs",
+    "test": "node --import tsx --test src/lib/*.test.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

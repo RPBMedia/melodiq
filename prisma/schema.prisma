@@ -21,6 +21,12 @@ model User {
   image         String?
   createdAt     DateTime      @default(now())
 
+  // Progression (M3). XP is the source of truth; level/rank are derived in
+  // src/lib/progression.ts. Daily streak is stamped on the day's daily finish.
+  xp            Int           @default(0)
+  dailyStreak   Int           @default(0)
+  lastDailyDate String? // "YYYY-MM-DD" (UTC) of the last completed Daily Challenge
+
   accounts Account[]
   sessions Session[]
   games    GameSession[]
@@ -95,15 +101,20 @@ model GameSession {
   totalRounds  Int       @default(10)
   mode         String    @default("multiple") // "multiple" | "typing"
   genre        String? // null => all genres
+  dailyDate    String? // "YYYY-MM-DD" (UTC) if this game is that day's Daily Challenge; else null
   createdAt    DateTime  @default(now())
   finishedAt   DateTime? // set when the game is completed; only finished games count
 
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   rounds Round[]
 
+  // One Daily Challenge per user per day. Normal games (dailyDate = null) are
+  // unaffected — Postgres treats NULLs as distinct, so they never collide.
+  @@unique([userId, dailyDate])
   @@index([userId])
   @@index([score])
   @@index([finishedAt])
+  @@index([dailyDate])
 }
 
 // Per-song detail within a game. Rows are pre-created at game start (songId +

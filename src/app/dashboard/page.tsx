@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Logo } from "@/components/Logo";
 import { DashboardCard } from "@/components/DashboardCard";
 import { SignOutButton } from "@/components/AuthButtons";
+import { levelForXp, rankForLevel, todayUTC, streakIsAlive } from "@/lib/progression";
 
 export const dynamic = "force-dynamic";
 
@@ -12,13 +13,33 @@ export default async function Dashboard() {
   const session = await auth();
   if (!session?.user?.id) redirect("/");
 
-  const best = await prisma.gameSession.aggregate({
-    where: { userId: session.user.id, finishedAt: { not: null } },
-    _max: { score: true },
-    _count: true,
-  });
+  const today = todayUTC();
+  const [best, me, todaysDaily] = await Promise.all([
+    prisma.gameSession.aggregate({
+      where: { userId: session.user.id, finishedAt: { not: null } },
+      _max: { score: true },
+      _count: true,
+    }),
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { xp: true, dailyStreak: true, lastDailyDate: true },
+    }),
+    prisma.gameSession.findUnique({
+      where: { userId_dailyDate: { userId: session.user.id, dailyDate: today } },
+      select: { finishedAt: true, score: true },
+    }),
+  ]);
 
   const firstName = (session.user.name ?? "there").split(" ")[0];
+
+  // Progression (M3). Level/rank are derived from stored XP; the streak greys
+  // out if it isn't alive (played today or yesterday).
+  const xp = me?.xp ?? 0;
+  const level = levelForXp(xp);
+  const rank = rankForLevel(level.level);
+  const streakAlive = streakIsAlive(me?.lastDailyDate ?? null, today);
+  const dailyStreak = streakAlive ? me?.dailyStreak ?? 0 : 0;
+  const dailyPlayed = !!todaysDaily?.finishedAt;
 
   return (
     <main className="mx-auto max-w-md px-5 pb-12 pt-10 lg:max-w-4xl lg:px-8">
@@ -44,6 +65,68 @@ export default async function Dashboard() {
             ? `Your best so far is ${best._max.score} points. Beat it?`
             : "Ready for your first round?"}
         </p>
+      </section>
+
+      {/* Progression: level, DJ-rank, XP bar */}
+      <section className="card mt-6 p-5">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="text-xs uppercase tracking-wider text-muted">{rank.title}</div>
+            <div className="font-display text-2xl font-bold">Level {level.level}</div>
+          </div>
+          <div className="text-right">
+            <div className="font-display text-lg font-bold tabular-nums text-cyan">
+              {xp.toLocaleString()} XP
+            </div>
+            {dailyStreak > 0 && <div className="text-sm">🔥 {dailyStreak}-day streak</div>}
+          </div>
+        </div>
+        <div
+          className="mt-3 h-2 overflow-hidden rounded-full bg-line"
+          role="progressbar"
+          aria-valuenow={level.progressPct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`${level.progressPct}% toward level ${level.level + 1}`}
+        >
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-magenta to-violet"
+            style={{ width: `${level.progressPct}%` }}
+          />
+        </div>
+        <div className="mt-1.5 flex justify-between text-xs text-muted">
+          <span>Level {level.level}</span>
+          <span>
+            {level.xpToNextLevel.toLocaleString()} XP to level {level.level + 1}
+            {rank.nextTitle ? ` · next rank: ${rank.nextTitle}` : ""}
+          </span>
+        </div>
+      </section>
+
+      {/* Daily Challenge — the core habit loop */}
+      <section className="card mt-6 p-5">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="text-xs uppercase tracking-wider text-magenta">🔥 Daily Challenge</div>
+            <div className="font-display text-xl font-bold">
+              {dailyPlayed ? "Done for today ✓" : "Same 10 tracks for everyone"}
+            </div>
+            <p className="mt-1 text-sm text-muted">
+              {dailyPlayed
+                ? `You scored ${todaysDaily?.score ?? 0}${dailyStreak > 0 ? ` · 🔥 ${dailyStreak}-day streak` : ""}. Back tomorrow to keep it going.`
+                : "One shot, seeded by today's date. Builds your daily streak and earns 1.5× XP."}
+            </p>
+          </div>
+          {dailyPlayed ? (
+            <Link href="/leaderboard" className="btn-ghost shrink-0 px-4 py-3 text-sm">
+              Leaderboard
+            </Link>
+          ) : (
+            <Link href="/play?daily=1" className="btn-primary shrink-0 px-5 py-3">
+              Play
+            </Link>
+          )}
+        </div>
       </section>
 
       <Link
