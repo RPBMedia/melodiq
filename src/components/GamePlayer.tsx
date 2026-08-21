@@ -67,6 +67,7 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
     isDaily: boolean;
     dailyStreak: number;
     newAchievements: { id: string; name: string; description: string; icon: string }[];
+    newRecords: number;
   } | null>(null);
 
   const round = rounds[idx];
@@ -243,6 +244,7 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
           isDaily: !!data.isDaily,
           dailyStreak: data.dailyStreak ?? 0,
           newAchievements: data.newAchievements ?? [],
+          newRecords: data.newRecords ?? 0,
         });
       } else {
         setError(data.error || "Could not save your score.");
@@ -361,6 +363,15 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
               ))}
             </div>
           </motion.div>
+        )}
+
+        {finalResult && finalResult.newRecords > 0 && (
+          <Link
+            href="/collection"
+            className="mb-4 flex items-center justify-center gap-2 rounded-2xl border border-good/40 bg-good/10 py-3 text-sm font-semibold text-good hover:bg-good/15"
+          >
+            💿 {finalResult.newRecords} new record{finalResult.newRecords > 1 ? "s" : ""} added to your Collection
+          </Link>
         )}
 
         <div className="grid grid-cols-2 gap-3 text-left">

@@ -15,7 +15,7 @@ export default async function Dashboard() {
   if (!session?.user?.id) redirect("/");
 
   const today = todayUTC();
-  const [best, me, todaysDaily, achievementsUnlocked] = await Promise.all([
+  const [best, me, todaysDaily, achievementsUnlocked, collectedSongs] = await Promise.all([
     prisma.gameSession.aggregate({
       where: { userId: session.user.id, finishedAt: { not: null } },
       _max: { score: true },
@@ -30,7 +30,13 @@ export default async function Dashboard() {
       select: { finishedAt: true, score: true },
     }),
     prisma.userAchievement.count({ where: { userId: session.user.id } }),
+    prisma.round.findMany({
+      where: { correct: true, gameSession: { userId: session.user.id } },
+      distinct: ["songId"],
+      select: { songId: true },
+    }),
   ]);
+  const collectedCount = collectedSongs.length;
 
   const firstName = (session.user.name ?? "there").split(" ")[0];
 
@@ -170,6 +176,14 @@ export default async function Dashboard() {
           desc={`${achievementsUnlocked}/${ACHIEVEMENTS.length} unlocked`}
           accent="linear-gradient(135deg,#FBBF24,#FF2D87)"
           icon={<span className="text-xl">🏅</span>}
+        />
+        <DashboardCard
+          index={4}
+          href="/collection"
+          title="Collection"
+          desc={`${collectedCount} track${collectedCount === 1 ? "" : "s"} collected`}
+          accent="linear-gradient(135deg,#34D399,#8B5CF6)"
+          icon={<span className="text-xl">💿</span>}
         />
       </section>
     </main>

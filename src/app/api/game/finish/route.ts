@@ -75,14 +75,31 @@ export async function POST(req: Request) {
 
   // Achievements — evaluated only on a game's first finish, alongside XP.
   let newAchievements: { id: string; name: string; description: string; icon: string }[] = [];
+  let newRecords = 0; // tracks collected for the FIRST time in this game
   if (outcome.justFinished) {
-    const [unlocked, gamesPlayed] = await Promise.all([
+    const correctSongIds = [...new Set(game.rounds.filter((r) => r.correct).map((r) => r.songId))];
+    const [unlocked, gamesPlayed, priorCollected] = await Promise.all([
       prisma.userAchievement.findMany({
         where: { userId: session.user.id },
         select: { achievementId: true },
       }),
       prisma.gameSession.count({ where: { userId: session.user.id, finishedAt: { not: null } } }),
+      // Songs this player had already collected in earlier games.
+      correctSongIds.length
+        ? prisma.round.findMany({
+            where: {
+              correct: true,
+              songId: { in: correctSongIds },
+              gameSessionId: { not: game.id },
+              gameSession: { userId: session.user.id },
+            },
+            distinct: ["songId"],
+            select: { songId: true },
+          })
+        : Promise.resolve([] as { songId: string }[]),
     ]);
+    const already2 = new Set(priorCollected.map((r) => r.songId));
+    newRecords = correctSongIds.filter((id) => !already2.has(id)).length;
     const already = new Set(unlocked.map((u) => u.achievementId));
     const subFiveCount = game.rounds.filter((r) => r.correct && r.timeMs > 0 && r.timeMs < 5000).length;
     newAchievements = evaluateAchievements(
@@ -125,5 +142,6 @@ export async function POST(req: Request) {
     xpToNextLevel: levelInfo.xpToNextLevel,
     dailyStreak: outcome.dailyStreak,
     newAchievements,
+    newRecords,
   });
 }
