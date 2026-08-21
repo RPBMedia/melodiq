@@ -1,14 +1,14 @@
-// Content Floor tool (PRD M3.5). Takes a curated candidate list for one
-// sub-genre, validates that each track has a real streamable preview
-// (iTunes → Deezer), de-dupes against the existing pool, and appends the
+// Content Floor tool (PRD M3.5). Takes curated candidate lists for sub-genres,
+// validates that each track has a real streamable preview (iTunes → Deezer),
+// de-dupes against the existing pool (and across this run), and appends the
 // survivors to prisma/songs.ts as SeedSong rows.
 //
-//   node scripts/expand-genre.mjs scripts/genre-candidates/<genre>.mjs
+//   node scripts/expand-genre.mjs <file.mjs> [<file2.mjs> ...]
 //
-// Candidate module default export: { genre, coverColor, songs: [{ title,
-// artist, year, difficulty }] }. Year/difficulty come from curation; the APIs
-// are used only to confirm a playable preview exists (so we never seed a
-// genre-filler track that would play silent).
+// Each file's default export is a batch { genre, coverColor, songs: [{ title,
+// artist, year, difficulty }] } OR an array of such batches. Year/difficulty
+// come from curation; the APIs only confirm a playable preview exists, so we
+// never seed genre-filler that would play silent.
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -19,6 +19,7 @@ const songsPath = join(__dirname, "..", "prisma", "songs.ts");
 
 const norm = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 const key = (t, a) => `${norm(t)}::${norm(a)}`;
+const esc = (s) => String(s).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function itunesPreview(title, artist) {
@@ -53,15 +54,9 @@ async function deezerPreview(title, artist) {
   }
 }
 
-const candFile = process.argv[2];
-if (!candFile) {
-  console.error("usage: node scripts/expand-genre.mjs <candidatesFile.mjs>");
-  process.exit(1);
-}
-const mod = await import(pathToFileURL(resolve(candFile)).href);
-const { genre, coverColor, songs: candidates } = mod.default;
-if (!genre || !coverColor || !Array.isArray(candidates)) {
-  console.error("candidates file must export { genre, coverColor, songs: [...] }");
+const files = process.argv.slice(2);
+if (!files.length) {
+  console.error("usage: node scripts/expand-genre.mjs <file.mjs> [<file2.mjs> ...]");
   process.exit(1);
 }
 
@@ -71,40 +66,46 @@ for (const m of text.matchAll(/title:\s*"((?:[^"\\]|\\.)+)",\s*artist:\s*"((?:[^
   existing.add(key(m[1].replace(/\\"/g, '"'), m[2].replace(/\\"/g, '"')));
 }
 
-const kept = [];
-let dup = 0;
-let dropped = 0;
-for (const c of candidates) {
-  const k = key(c.title, c.artist);
-  if (existing.has(k)) {
-    dup++;
-    continue;
-  }
-  const ok = (await itunesPreview(c.title, c.artist)) || (await deezerPreview(c.title, c.artist));
-  await sleep(200); // be polite to the search APIs
-  if (!ok) {
-    dropped++;
-    console.log("  DROP (no preview):", c.title, "—", c.artist);
-    continue;
-  }
-  existing.add(k);
-  kept.push(c);
+// Collect all batches from every file (each default = batch or batch[]).
+const batches = [];
+for (const f of files) {
+  const mod = await import(pathToFileURL(resolve(f)).href);
+  for (const b of Array.isArray(mod.default) ? mod.default : [mod.default]) batches.push(b);
 }
 
-const esc = (s) => String(s).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-const lines = kept
-  .map(
-    (c) =>
-      `  { title: "${esc(c.title)}", artist: "${esc(c.artist)}", genre: "${genre}", year: ${c.year}, coverColor: "${coverColor}", difficulty: ${c.difficulty ?? 2} },`,
-  )
-  .join("\n");
+let addedLines = "";
+for (const { genre, coverColor, songs } of batches) {
+  if (!genre || !coverColor || !Array.isArray(songs)) {
+    console.error("bad batch (need genre, coverColor, songs):", genre);
+    continue;
+  }
+  const kept = [];
+  let dup = 0;
+  let dropped = 0;
+  for (const c of songs) {
+    const k = key(c.title, c.artist);
+    if (existing.has(k)) {
+      dup++;
+      continue;
+    }
+    const ok = (await itunesPreview(c.title, c.artist)) || (await deezerPreview(c.title, c.artist));
+    await sleep(150);
+    if (!ok) {
+      dropped++;
+      continue;
+    }
+    existing.add(k);
+    kept.push(c);
+  }
+  for (const c of kept) {
+    addedLines += `  { title: "${esc(c.title)}", artist: "${esc(c.artist)}", genre: "${genre}", year: ${c.year}, coverColor: "${coverColor}", difficulty: ${c.difficulty ?? 2} },\n`;
+  }
+  console.log(`"${genre}": +${kept.length} · ${dup} dup · ${dropped} dropped`);
+}
 
-if (kept.length) {
+if (addedLines) {
   const idx = text.lastIndexOf("];");
-  text = text.slice(0, idx) + lines + "\n" + text.slice(idx);
+  text = text.slice(0, idx) + addedLines + text.slice(idx);
   writeFileSync(songsPath, text);
 }
-
-console.log(
-  `\n"${genre}": +${kept.length} added · ${dup} already present · ${dropped} dropped (no preview).`,
-);
+console.log("\nDone. Run `npm run check:floor` to verify.");
