@@ -11,6 +11,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "fetch:previews": "node scripts/fetch-previews.mjs",
+    "expand:genre": "node scripts/expand-genre.mjs",
+    "check:floor": "node scripts/check-genre-floor.mjs",
     "test": "node --import tsx --test src/lib/*.test.ts"
   },
   "prisma": {
