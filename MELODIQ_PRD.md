@@ -376,6 +376,24 @@ scoring, leaderboard, per-user stats, iTunes preview pipeline. *Polish + deploy.
 - **XP/Levels** with DJ-rank titles; **Record Collection** wall; **Achievements**.
 - Results/share cards; onboarding that teaches the loop in 20 seconds.
 
+### M3.5 — Content Floor (≥50 per sub-genre) — **highest priority, before multiplayer**
+Guarantee variety even in the longest game: **every sub-genre must hold at least
+50 curated, preview-verified tracks** (≈2× the 30-question max, with headroom), so
+a single game never repeats a clip. Current depth is far below this — Black Metal
+11; Dance, Folk metal, Hip hop 10; R&B 13; New-age 14 (baseline: 383 songs across
+19 sub-genres, **all under 50**), so the same songs recur within one game.
+
+- Extend the content pipeline into an **"expand genre to N"** tool: curated
+  candidate lists → multi-provider preview fetch (iTunes + Deezer) → validate
+  (URL resolves, right recording, difficulty tier) → append to the
+  version-controlled `prisma/songs.ts` (dedup by title+artist).
+- Raise **every** sub-genre to ≥50, thinnest first (dance, folk metal, hip hop,
+  black metal, r&b, new-age…), keeping a spread of difficulty tiers and eras.
+- Add a **floor-check script** that fails when `min(count per sub-genre) < 50`.
+- **DoD:** min per-sub-genre count ≥ 50; floor-check green; a 30-question game in
+  any one sub-genre yields 30 distinct tracks; no dead previews or wrong/duplicate
+  recordings after a re-seed + spot-check.
+
 ### M4 — Modes & Journeys
 - **Genre Journeys/Tours** (the map-progression backbone) with star ratings +
   unlocks, themed per genre/era.
