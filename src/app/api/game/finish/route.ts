@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { xpForGame, levelForXp, rankForLevel, nextStreak } from "@/lib/progression";
+import { evaluateAchievements } from "@/lib/achievements";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +57,7 @@ export async function POST(req: Request) {
     if (fin.count !== 1) {
       // Already finished earlier: keep the aggregate in sync, award nothing.
       await tx.gameSession.update({ where: { id: game.id }, data: { score, correctCount } });
-      return { xpEarned: 0, totalXp: beforeXp, dailyStreak: before?.dailyStreak ?? 0 };
+      return { justFinished: false, xpEarned: 0, totalXp: beforeXp, dailyStreak: before?.dailyStreak ?? 0 };
     }
     const xpEarned = xpForGame({ score, correctCount, totalRounds: game.totalRounds, isDaily });
     const data: Prisma.UserUpdateInput = { xp: { increment: xpEarned } };
@@ -67,10 +68,43 @@ export async function POST(req: Request) {
       data.lastDailyDate = game.dailyDate;
     }
     const user = await tx.user.update({ where: { id: session.user.id }, data, select: { xp: true } });
-    return { xpEarned, totalXp: user.xp, dailyStreak };
+    return { justFinished: true, xpEarned, totalXp: user.xp, dailyStreak };
   });
 
   const levelInfo = levelForXp(outcome.totalXp);
+
+  // Achievements — evaluated only on a game's first finish, alongside XP.
+  let newAchievements: { id: string; name: string; description: string; icon: string }[] = [];
+  if (outcome.justFinished) {
+    const [unlocked, gamesPlayed] = await Promise.all([
+      prisma.userAchievement.findMany({
+        where: { userId: session.user.id },
+        select: { achievementId: true },
+      }),
+      prisma.gameSession.count({ where: { userId: session.user.id, finishedAt: { not: null } } }),
+    ]);
+    const already = new Set(unlocked.map((u) => u.achievementId));
+    const subFiveCount = game.rounds.filter((r) => r.correct && r.timeMs > 0 && r.timeMs < 5000).length;
+    newAchievements = evaluateAchievements(
+      {
+        score,
+        correctCount,
+        totalRounds: game.totalRounds,
+        isDaily,
+        subFiveCount,
+        gamesPlayed,
+        dailyStreak: outcome.dailyStreak,
+        level: levelInfo.level,
+      },
+      already,
+    );
+    if (newAchievements.length) {
+      await prisma.userAchievement.createMany({
+        data: newAchievements.map((a) => ({ userId: session.user.id, achievementId: a.id })),
+        skipDuplicates: true,
+      });
+    }
+  }
 
   return NextResponse.json({
     gameId: game.id,
@@ -90,5 +124,6 @@ export async function POST(req: Request) {
     progressPct: levelInfo.progressPct,
     xpToNextLevel: levelInfo.xpToNextLevel,
     dailyStreak: outcome.dailyStreak,
+    newAchievements,
   });
 }

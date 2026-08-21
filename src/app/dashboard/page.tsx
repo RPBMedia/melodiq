@@ -6,6 +6,7 @@ import { Logo } from "@/components/Logo";
 import { DashboardCard } from "@/components/DashboardCard";
 import { SignOutButton } from "@/components/AuthButtons";
 import { levelForXp, rankForLevel, todayUTC, streakIsAlive } from "@/lib/progression";
+import { ACHIEVEMENTS } from "@/lib/achievements";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ export default async function Dashboard() {
   if (!session?.user?.id) redirect("/");
 
   const today = todayUTC();
-  const [best, me, todaysDaily] = await Promise.all([
+  const [best, me, todaysDaily, achievementsUnlocked] = await Promise.all([
     prisma.gameSession.aggregate({
       where: { userId: session.user.id, finishedAt: { not: null } },
       _max: { score: true },
@@ -28,6 +29,7 @@ export default async function Dashboard() {
       where: { userId_dailyDate: { userId: session.user.id, dailyDate: today } },
       select: { finishedAt: true, score: true },
     }),
+    prisma.userAchievement.count({ where: { userId: session.user.id } }),
   ]);
 
   const firstName = (session.user.name ?? "there").split(" ")[0];
@@ -160,6 +162,14 @@ export default async function Dashboard() {
           desc="Track your progress"
           accent="linear-gradient(135deg,#22D3EE,#34D399)"
           icon={<span className="text-xl">📈</span>}
+        />
+        <DashboardCard
+          index={3}
+          href="/achievements"
+          title="Achievements"
+          desc={`${achievementsUnlocked}/${ACHIEVEMENTS.length} unlocked`}
+          accent="linear-gradient(135deg,#FBBF24,#FF2D87)"
+          icon={<span className="text-xl">🏅</span>}
         />
       </section>
     </main>

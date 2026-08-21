@@ -27,9 +27,10 @@ model User {
   dailyStreak   Int           @default(0)
   lastDailyDate String? // "YYYY-MM-DD" (UTC) of the last completed Daily Challenge
 
-  accounts Account[]
-  sessions Session[]
-  games    GameSession[]
+  accounts     Account[]
+  sessions     Session[]
+  games        GameSession[]
+  achievements UserAchievement[]
 }
 
 model Account {
@@ -138,4 +139,18 @@ model Round {
 
   @@unique([gameSessionId, order])
   @@index([gameSessionId])
+}
+
+// An achievement a user has unlocked. The catalog itself is code-defined in
+// src/lib/achievements.ts; only the unlock is persisted, keyed by that id.
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String // matches an id in src/lib/achievements.ts
+  unlockedAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([userId])
 }

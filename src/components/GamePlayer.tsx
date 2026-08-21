@@ -66,6 +66,7 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
     rank: string;
     isDaily: boolean;
     dailyStreak: number;
+    newAchievements: { id: string; name: string; description: string; icon: string }[];
   } | null>(null);
 
   const round = rounds[idx];
@@ -241,6 +242,7 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
           rank: data.rank ?? "",
           isDaily: !!data.isDaily,
           dailyStreak: data.dailyStreak ?? 0,
+          newAchievements: data.newAchievements ?? [],
         });
       } else {
         setError(data.error || "Could not save your score.");
@@ -335,6 +337,30 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
               Level {finalResult.level} · {finalResult.rank}
             </p>
           </div>
+        )}
+
+        {/* Newly unlocked achievements */}
+        {finalResult && finalResult.newAchievements.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="mb-4 rounded-2xl border border-violet/40 bg-violet/10 p-4"
+          >
+            <p className="text-xs font-semibold uppercase tracking-wider text-violet">
+              Achievement{finalResult.newAchievements.length > 1 ? "s" : ""} unlocked!
+            </p>
+            <div className="mt-2 flex flex-col gap-2">
+              {finalResult.newAchievements.map((a) => (
+                <div key={a.id} className="flex items-center gap-3 text-left">
+                  <span className="text-2xl" aria-hidden>{a.icon}</span>
+                  <div>
+                    <div className="font-display text-sm font-semibold">{a.name}</div>
+                    <div className="text-xs text-muted">{a.description}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
         )}
 
         <div className="grid grid-cols-2 gap-3 text-left">
