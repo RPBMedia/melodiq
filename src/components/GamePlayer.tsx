@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Visualizer } from "./Visualizer";
 import { Logo } from "./Logo";
 import { ROUND_SECONDS, pointsForElapsed } from "@/lib/scoring";
+import { buildShareText } from "@/lib/share";
 
 type Round = {
   order: number;
@@ -52,6 +53,9 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
   const [reveal, setReveal] = useState<Reveal | null>(null);
   const answeredRef = useRef(false);
 
+  // share
+  const [shareState, setShareState] = useState<"idle" | "copied">("idle");
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const startRef = useRef<number>(0);
   const rafRef = useRef<number | null>(null);
@@ -68,6 +72,8 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
     dailyStreak: number;
     newAchievements: { id: string; name: string; description: string; icon: string }[];
     newRecords: number;
+    gameId: string;
+    genre: string | null;
   } | null>(null);
 
   const round = rounds[idx];
@@ -245,6 +251,8 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
           dailyStreak: data.dailyStreak ?? 0,
           newAchievements: data.newAchievements ?? [],
           newRecords: data.newRecords ?? 0,
+          gameId: data.gameId ?? gameId,
+          genre: data.genre ?? null,
         });
       } else {
         setError(data.error || "Could not save your score.");
@@ -309,6 +317,35 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
     const pct = total ? Math.round((score / (total * 100)) * 100) : 0;
     const xpEarned = finalResult?.xpEarned ?? 0;
     const isDailyResult = finalResult?.isDaily ?? daily;
+
+    const handleShare = async () => {
+      if (!finalResult) return;
+      const url = `${window.location.origin}/s/${finalResult.gameId}`;
+      const text = buildShareText({
+        score,
+        correctCount: correct,
+        totalRounds: total,
+        genre: finalResult.genre,
+        isDaily: isDailyResult,
+      });
+      // Native share sheet where available (mobile); otherwise copy the link.
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: "MelodIQ", text, url });
+          return;
+        } catch {
+          return; // user dismissed the sheet
+        }
+      }
+      try {
+        await navigator.clipboard.writeText(`${text} ${url}`);
+        setShareState("copied");
+        setTimeout(() => setShareState("idle"), 2000);
+      } catch {
+        setError("Couldn't copy the link — long-press to copy from the address bar.");
+      }
+    };
+
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.96 }}
@@ -383,6 +420,14 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
         </div>
         {error && <p className="mt-4 text-sm text-bad">{error}</p>}
         <div className="mt-7 flex flex-col gap-3">
+          {finalResult?.gameId && (
+            <button
+              onClick={handleShare}
+              className="flex items-center justify-center gap-2 rounded-2xl border border-violet/50 bg-violet/15 px-6 py-4 font-semibold text-ink hover:bg-violet/25"
+            >
+              {shareState === "copied" ? "✓ Link copied!" : "📣 Share your score"}
+            </button>
+          )}
           {isDailyResult ? (
             <Link href="/dashboard" className="btn-primary px-6 py-4">Back to dashboard</Link>
           ) : (
