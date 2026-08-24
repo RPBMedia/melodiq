@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Logo } from "@/components/Logo";
 import { DashboardCard } from "@/components/DashboardCard";
 import { SignOutButton } from "@/components/AuthButtons";
+import { Onboarding, HowToPlayButton } from "@/components/Onboarding";
 import { levelForXp, rankForLevel, todayUTC, streakIsAlive } from "@/lib/progression";
 import { ACHIEVEMENTS } from "@/lib/achievements";
 
@@ -51,6 +52,7 @@ export default async function Dashboard() {
 
   return (
     <main className="mx-auto max-w-md px-5 pb-12 pt-10 lg:max-w-4xl lg:px-8">
+      <Onboarding />
       <header className="flex items-center justify-between">
         <Logo className="text-xl" />
         <div className="flex items-center gap-3">
@@ -143,6 +145,9 @@ export default async function Dashboard() {
       >
         ▶ Start game
       </Link>
+      <div className="mt-3 text-center">
+        <HowToPlayButton />
+      </div>
 
       <section className="mt-6 grid gap-3 sm:grid-cols-3">
         <DashboardCard
