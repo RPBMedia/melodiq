@@ -8,6 +8,7 @@ import { SignOutButton } from "@/components/AuthButtons";
 import { Onboarding, HowToPlayButton } from "@/components/Onboarding";
 import { levelForXp, rankForLevel, todayUTC, streakIsAlive } from "@/lib/progression";
 import { ACHIEVEMENTS } from "@/lib/achievements";
+import { JOURNEYS, MAX_STAGE_STARS } from "@/lib/journeys";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export default async function Dashboard() {
   if (!session?.user?.id) redirect("/");
 
   const today = todayUTC();
-  const [best, me, todaysDaily, achievementsUnlocked, collectedSongs] = await Promise.all([
+  const [best, me, todaysDaily, achievementsUnlocked, collectedSongs, journeyAgg] = await Promise.all([
     prisma.gameSession.aggregate({
       where: { userId: session.user.id, finishedAt: { not: null } },
       _max: { score: true },
@@ -36,8 +37,14 @@ export default async function Dashboard() {
       distinct: ["songId"],
       select: { songId: true },
     }),
+    prisma.userStageProgress.aggregate({
+      where: { userId: session.user.id },
+      _sum: { stars: true },
+    }),
   ]);
   const collectedCount = collectedSongs.length;
+  const journeyStars = journeyAgg._sum.stars ?? 0;
+  const journeyMaxStars = JOURNEYS.reduce((n, j) => n + j.stages.length * MAX_STAGE_STARS, 0);
 
   const firstName = (session.user.name ?? "there").split(" ")[0];
 
@@ -192,6 +199,14 @@ export default async function Dashboard() {
         />
         <DashboardCard
           index={5}
+          href="/journeys"
+          title="Journeys"
+          desc={`★ ${journeyStars}/${journeyMaxStars} · genre tours`}
+          accent="linear-gradient(135deg,#8B5CF6,#FB7185)"
+          icon={<span className="text-xl">🗺️</span>}
+        />
+        <DashboardCard
+          index={6}
           href="/play?mode=survival"
           title="Survival"
           desc="3 lives · how far can you go?"
@@ -199,7 +214,7 @@ export default async function Dashboard() {
           icon={<span className="text-xl">💀</span>}
         />
         <DashboardCard
-          index={6}
+          index={7}
           href="/play?mode=speed"
           title="Speed"
           desc="Name it in the first seconds"

@@ -34,11 +34,14 @@ type Reveal = { correct: boolean; points: number; answer: string; artist: string
 export function GamePlayer({
   daily = false,
   initialVariant = "classic",
+  stageId,
 }: {
   daily?: boolean;
   initialVariant?: Variant;
+  stageId?: string;
 }) {
-  const [phase, setPhase] = useState<Phase>(daily ? "loading" : "setup");
+  const isStage = !!stageId;
+  const [phase, setPhase] = useState<Phase>(daily || isStage ? "loading" : "setup");
   const [error, setError] = useState<string | null>(null);
 
   // setup choices
@@ -88,6 +91,16 @@ export function GamePlayer({
     newRecords: number;
     gameId: string;
     genre: string | null;
+    journeyResult: {
+      journeyId: string;
+      stageId: string;
+      stageTitle: string;
+      stars: number;
+      bestStars: number;
+      isNewBest: boolean;
+      nextStageId: string | null;
+      nextStageTitle: string | null;
+    } | null;
   } | null>(null);
 
   const round = rounds[idx];
@@ -123,14 +136,15 @@ export function GamePlayer({
     setError(null);
     try {
       // Classic sends its input style (multiple/typing); Survival/Speed send
-      // the variant as the mode (both are multiple-choice server-side).
+      // the variant as the mode (both are multiple-choice server-side). A
+      // Journey stage sends its stageId and the server fixes the rest.
       const requestMode = variant === "classic" ? mode : variant;
       const res = daily
         ? await fetch("/api/daily", { method: "POST" })
         : await fetch("/api/game/start", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ genre, mode: requestMode, count }),
+            body: JSON.stringify(isStage ? { stageId } : { genre, mode: requestMode, count }),
           });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -155,17 +169,17 @@ export function GamePlayer({
       setError(e instanceof Error ? e.message : "Something went wrong.");
       setPhase("error");
     }
-  }, [genre, mode, count, daily, variant]);
+  }, [genre, mode, count, daily, variant, isStage, stageId]);
 
   // The Daily Challenge auto-starts (no setup screen). Guard so React's
   // dev double-invoke can't fire two starts.
   const autoStartedRef = useRef(false);
   useEffect(() => {
-    if (daily && !autoStartedRef.current) {
+    if ((daily || isStage) && !autoStartedRef.current) {
       autoStartedRef.current = true;
       void startGame();
     }
-  }, [daily, startGame]);
+  }, [daily, isStage, startGame]);
 
   // ----- Answer the current round (server scores it) -----
   const answer = useCallback(
@@ -284,6 +298,7 @@ export function GamePlayer({
           newRecords: data.newRecords ?? 0,
           gameId: data.gameId ?? gameId,
           genre: data.genre ?? null,
+          journeyResult: data.journeyResult ?? null,
         });
       } else {
         setError(data.error || "Could not save your score.");
@@ -367,13 +382,16 @@ export function GamePlayer({
     const isDailyResult = finalResult?.isDaily ?? daily;
     const isSurvivalResult = playMode === "survival";
     const isSpeedResult = playMode === "speed";
-    const pillText = isDailyResult
-      ? "Daily Challenge complete"
-      : isSurvivalResult
-        ? "Survival run"
-        : isSpeedResult
-          ? "Speed round"
-          : "Game complete";
+    const journey = finalResult?.journeyResult ?? null;
+    const pillText = journey
+      ? `Journey · ${journey.stageTitle}`
+      : isDailyResult
+        ? "Daily Challenge complete"
+        : isSurvivalResult
+          ? "Survival run"
+          : isSpeedResult
+            ? "Speed round"
+            : "Game complete";
 
     const handleShare = async () => {
       if (!finalResult) return;
@@ -419,6 +437,29 @@ export function GamePlayer({
             {isSurvivalResult ? `${correct} track${correct === 1 ? "" : "s"} identified` : `out of ${total * 100} points`}
           </div>
         </div>
+
+        {/* Journey stars */}
+        {journey && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="mb-4"
+          >
+            <div className="font-display text-4xl tracking-widest" aria-label={`${journey.stars} of 3 stars`}>
+              {"★".repeat(journey.stars)}
+              <span className="text-line">{"★".repeat(3 - journey.stars)}</span>
+            </div>
+            <p className="mt-1 text-xs text-muted">
+              {journey.stars === 0
+                ? "Get 5 right for your first star."
+                : journey.isNewBest
+                  ? journey.stars === 3
+                    ? "Mastered! ⭐ New best."
+                    : "New best on this stage!"
+                  : `Best: ${"★".repeat(journey.bestStars)}`}
+            </p>
+          </motion.div>
+        )}
 
         {/* XP + level-up */}
         {finalResult && (
@@ -495,14 +536,37 @@ export function GamePlayer({
               {shareState === "copied" ? "✓ Link copied!" : "📣 Share your score"}
             </button>
           )}
-          {isDailyResult ? (
-            <Link href="/dashboard" className="btn-primary px-6 py-4">Back to dashboard</Link>
+          {journey ? (
+            <>
+              {journey.nextStageId ? (
+                <Link href={`/play?stage=${journey.nextStageId}`} className="btn-primary px-6 py-4">
+                  Next stage: {journey.nextStageTitle} →
+                </Link>
+              ) : journey.stars === 0 ? (
+                <Link href={`/play?stage=${journey.stageId}`} className="btn-primary px-6 py-4">
+                  Try this stage again
+                </Link>
+              ) : (
+                <Link href={`/journeys/${journey.journeyId}`} className="btn-primary px-6 py-4">
+                  Back to the map
+                </Link>
+              )}
+              <Link href={`/journeys/${journey.journeyId}`} className="btn-ghost px-6 py-3">
+                Journey map
+              </Link>
+            </>
           ) : (
-            <button onClick={() => setPhase("setup")} className="btn-primary px-6 py-4">Play again</button>
-          )}
-          <Link href="/leaderboard" className="btn-ghost px-6 py-3">View leaderboard</Link>
-          {!isDailyResult && (
-            <Link href="/dashboard" className="text-sm text-muted hover:text-ink">Back to dashboard</Link>
+            <>
+              {isDailyResult ? (
+                <Link href="/dashboard" className="btn-primary px-6 py-4">Back to dashboard</Link>
+              ) : (
+                <button onClick={() => setPhase("setup")} className="btn-primary px-6 py-4">Play again</button>
+              )}
+              <Link href="/leaderboard" className="btn-ghost px-6 py-3">View leaderboard</Link>
+              {!isDailyResult && (
+                <Link href="/dashboard" className="text-sm text-muted hover:text-ink">Back to dashboard</Link>
+              )}
+            </>
           )}
         </div>
       </motion.div>

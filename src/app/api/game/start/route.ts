@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { buildGame } from "@/lib/game";
 import { SONGS_PER_GAME, SURVIVAL_STACK } from "@/lib/scoring";
+import { stageById, STAGE_QUESTIONS } from "@/lib/journeys";
 
 export const dynamic = "force-dynamic";
 
@@ -12,22 +13,30 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
-  let body: { genre?: string | null; mode?: string; count?: number } = {};
+  let body: { genre?: string | null; mode?: string; count?: number; stageId?: string } = {};
   try {
     body = await req.json();
   } catch {
     // empty body is fine — defaults to all genres, multiple choice, 10 songs
   }
-  const genre = body.genre && body.genre !== "all" ? body.genre : null;
-  const mode = ["typing", "survival", "speed"].includes(body.mode ?? "")
-    ? (body.mode as string)
-    : "multiple";
+
+  // A Genre Journey stage fixes the genre + a 10-question multiple-choice game.
+  const stage = body.stageId ? stageById(body.stageId) : undefined;
+
+  const genre = stage ? stage.stage.genre : body.genre && body.genre !== "all" ? body.genre : null;
+  const mode = stage
+    ? "multiple"
+    : ["typing", "survival", "speed"].includes(body.mode ?? "")
+      ? (body.mode as string)
+      : "multiple";
 
   // Survival plays a deep, difficulty-ramped stack (ends when lives run out);
-  // Speed is a normal-length game; Classic honours the chosen length.
+  // Speed and Journey stages are normal-length; Classic honours the chosen length.
   let count: number;
   let ramp = false;
-  if (mode === "survival") {
+  if (stage) {
+    count = STAGE_QUESTIONS;
+  } else if (mode === "survival") {
     count = SURVIVAL_STACK;
     ramp = true;
   } else if (mode === "speed") {
@@ -45,6 +54,7 @@ export async function POST(req: Request) {
         totalRounds: rounds.length,
         mode,
         genre,
+        stageId: stage ? stage.stage.id : null,
         rounds: {
           create: rounds.map((r) => ({ songId: r.songId, order: r.order })),
         },
@@ -55,6 +65,7 @@ export async function POST(req: Request) {
       gameId: game.id,
       mode,
       genre,
+      stageId: stage ? stage.stage.id : null,
       titlePool,
       // Never include the correct title here.
       rounds: rounds.map((r) => ({

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { xpForGame, levelForXp, rankForLevel, nextStreak } from "@/lib/progression";
 import { evaluateAchievements } from "@/lib/achievements";
+import { starsForCorrect, stageById } from "@/lib/journeys";
 
 export const dynamic = "force-dynamic";
 
@@ -123,6 +124,51 @@ export async function POST(req: Request) {
     }
   }
 
+  // Genre Journey stage — record the best star result and surface the next
+  // stage. Idempotent: stars are a max-upsert, so a repeat finish is harmless.
+  let journeyResult: {
+    journeyId: string;
+    stageId: string;
+    stageTitle: string;
+    stars: number;
+    bestStars: number;
+    isNewBest: boolean;
+    nextStageId: string | null;
+    nextStageTitle: string | null;
+  } | null = null;
+  if (game.stageId) {
+    const located = stageById(game.stageId);
+    if (located) {
+      const { journey, stage, index } = located;
+      const stars = starsForCorrect(correctCount, game.totalRounds);
+      const existing = await prisma.userStageProgress.findUnique({
+        where: { userId_stageId: { userId: session.user.id, stageId: stage.id } },
+        select: { stars: true },
+      });
+      const prevStars = existing?.stars ?? 0;
+      const bestStars = Math.max(prevStars, stars);
+      if (bestStars !== prevStars) {
+        await prisma.userStageProgress.upsert({
+          where: { userId_stageId: { userId: session.user.id, stageId: stage.id } },
+          create: { userId: session.user.id, stageId: stage.id, stars: bestStars },
+          update: { stars: bestStars },
+        });
+      }
+      // The next stage unlocks once this one has at least one star.
+      const nextStage = bestStars >= 1 ? journey.stages[index + 1] ?? null : null;
+      journeyResult = {
+        journeyId: journey.id,
+        stageId: stage.id,
+        stageTitle: stage.title,
+        stars,
+        bestStars,
+        isNewBest: stars > prevStars,
+        nextStageId: nextStage?.id ?? null,
+        nextStageTitle: nextStage?.title ?? null,
+      };
+    }
+  }
+
   return NextResponse.json({
     gameId: game.id,
     score,
@@ -130,6 +176,7 @@ export async function POST(req: Request) {
     totalRounds: game.totalRounds,
     mode: game.mode,
     genre: game.genre,
+    journeyResult,
     isDaily,
     dailyDate: game.dailyDate,
     // progression

@@ -27,10 +27,11 @@ model User {
   dailyStreak   Int           @default(0)
   lastDailyDate String? // "YYYY-MM-DD" (UTC) of the last completed Daily Challenge
 
-  accounts     Account[]
-  sessions     Session[]
-  games        GameSession[]
-  achievements UserAchievement[]
+  accounts      Account[]
+  sessions      Session[]
+  games         GameSession[]
+  achievements  UserAchievement[]
+  stageProgress UserStageProgress[]
 }
 
 model Account {
@@ -100,9 +101,10 @@ model GameSession {
   score        Int       @default(0)
   correctCount Int       @default(0)
   totalRounds  Int       @default(10)
-  mode         String    @default("multiple") // "multiple" | "typing"
+  mode         String    @default("multiple") // "multiple" | "typing" | "survival" | "speed"
   genre        String? // null => all genres
   dailyDate    String? // "YYYY-MM-DD" (UTC) if this game is that day's Daily Challenge; else null
+  stageId      String? // a Genre Journey stage id (src/lib/journeys.ts) if this game is a journey stage; else null
   createdAt    DateTime  @default(now())
   finishedAt   DateTime? // set when the game is completed; only finished games count
 
@@ -152,5 +154,21 @@ model UserAchievement {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, achievementId])
+  @@index([userId])
+}
+
+// Best result a user has earned on a Genre Journey stage. The journey/stage
+// catalog is code-defined in src/lib/journeys.ts; only the best star count is
+// persisted, keyed by that stage id. Stars: 0–3.
+model UserStageProgress {
+  id        String   @id @default(cuid())
+  userId    String
+  stageId   String // matches a stage id in src/lib/journeys.ts
+  stars     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, stageId])
   @@index([userId])
 }
