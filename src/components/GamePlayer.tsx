@@ -7,6 +7,7 @@ import { Visualizer } from "./Visualizer";
 import { Logo } from "./Logo";
 import { roundSecondsForMode, pointsForModeElapsed, SURVIVAL_LIVES, YEAR_MIN } from "@/lib/scoring";
 import { buildShareText } from "@/lib/share";
+import { availableHintLevels, hintsCost, HINT_LADDER, type HintKind } from "@/lib/hints";
 
 type Round = {
   order: number;
@@ -30,6 +31,23 @@ type Phase =
   | "error";
 
 type Reveal = { correct: boolean; points: number; answer: string; artist: string; year: number | null };
+
+function hintChipText(kind: HintKind, value: string): string {
+  switch (kind) {
+    case "genre":
+      return `Genre · ${value}`;
+    case "decade":
+      return `Decade · ${value}`;
+    case "initials":
+      return `Artist · ${value}`;
+    case "firstLetter":
+      return `Title · ${value}`;
+    case "removeOption":
+      return "Removed a wrong option";
+  }
+}
+
+const HINT_STYLE = { color: "#FBBF24", borderColor: "rgba(251,191,36,0.5)", background: "rgba(251,191,36,0.12)" };
 
 export function GamePlayer({
   daily = false,
@@ -73,6 +91,11 @@ export function GamePlayer({
   const [reveal, setReveal] = useState<Reveal | null>(null);
   const answeredRef = useRef(false);
 
+  // hints (single-player Classic modes only)
+  const [hints, setHints] = useState<{ level: number; kind: HintKind; value: string; cost: number }[]>([]);
+  const [removedOption, setRemovedOption] = useState<string | null>(null);
+  const [hintBusy, setHintBusy] = useState(false);
+
   // share
   const [shareState, setShareState] = useState<"idle" | "copied">("idle");
 
@@ -109,11 +132,15 @@ export function GamePlayer({
   const round = rounds[idx];
   const roundSeconds = roundSecondsForMode(playMode);
   const remaining = Math.max(0, roundSeconds - elapsedMs / 1000);
-  const liveScore = pointsForModeElapsed(playMode, elapsedMs / 1000);
+  // Net of hint spend — what a correct answer is actually worth right now.
+  const liveScore = Math.max(0, pointsForModeElapsed(playMode, elapsedMs / 1000) - hintsCost(hints.length));
   const isSurvival = playMode === "survival";
   const isYear = playMode === "year";
   // Only Classic "typing" uses the text input; every other mode is multiple-choice.
   const inputStyle: Mode = playMode === "typing" ? "typing" : "multiple";
+  // Hints — single-player Classic only; ladder bought in order.
+  const hintLevelsAvailable = availableHintLevels(playMode);
+  const nextHint = hints.length < hintLevelsAvailable ? HINT_LADDER[hints.length] : null;
 
   const stopClock = useCallback(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -224,6 +251,27 @@ export function GamePlayer({
     [round, gameId, stopClock, playMode],
   );
 
+  // ----- Buy the next hint (server reveals + records it) -----
+  const useHint = useCallback(async () => {
+    if (!round || !gameId || hintBusy) return;
+    if (hints.length >= availableHintLevels(playMode)) return;
+    setHintBusy(true);
+    try {
+      const res = await fetch("/api/game/round/hint", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gameId, order: round.order, options: round.options.map((o) => o.title) }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setHints((h) => [...h, { level: data.level, kind: data.kind, value: data.value, cost: data.cost }]);
+        if (data.kind === "removeOption") setRemovedOption(data.value);
+      }
+    } finally {
+      setHintBusy(false);
+    }
+  }, [round, gameId, hints.length, playMode, hintBusy]);
+
   // ----- Clock loop while playing -----
   useEffect(() => {
     if (phase !== "playing") return;
@@ -248,6 +296,8 @@ export function GamePlayer({
     setPicked(null);
     setTyped("");
     setYearGuess(YEAR_MID);
+    setHints([]);
+    setRemovedOption(null);
     setReveal(null);
     setElapsedMs(0);
     startRef.current = performance.now();
@@ -654,22 +704,50 @@ export function GamePlayer({
             <button onClick={playRound} className="btn-primary w-full px-6 py-4 text-base">▶ Play clip</button>
           )}
 
+          {/* Hints — single-player Classic only. Revealed chips + the next-step button. */}
+          {hintLevelsAvailable > 0 && (isPlaying || isRevealed) && (hints.length > 0 || isPlaying) && (
+            <div className="mb-3 flex flex-col gap-2">
+              {hints.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {hints.map((h) => (
+                    <span key={h.level} className="rounded-full border px-3 py-1 text-xs font-medium" style={HINT_STYLE}>
+                      💡 {hintChipText(h.kind, h.value)}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {isPlaying && nextHint && (
+                <button
+                  onClick={useHint}
+                  disabled={hintBusy}
+                  className="self-start rounded-2xl border px-4 py-2 text-sm font-semibold transition hover:brightness-110 disabled:opacity-50"
+                  style={HINT_STYLE}
+                >
+                  💡 {nextHint.label} (−{nextHint.cost} pts)
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Multiple-choice mode */}
           {!isYear && inputStyle === "multiple" && (isPlaying || isChecking || isRevealed) && round && (
             <div className="grid gap-3">
               {round.options.map((opt) => {
                 const isAnswer = isRevealed && reveal?.answer === opt.title;
                 const isPicked = opt.title === picked;
+                const isRemoved = !isRevealed && opt.title === removedOption;
                 let cls = "btn-ghost";
                 if (isRevealed) {
                   if (isAnswer) cls = "btn border border-good bg-good/20 text-good";
                   else if (isPicked) cls = "btn border border-bad bg-bad/20 text-bad";
                   else cls = "btn border border-line bg-surface2/40 text-muted";
+                } else if (isRemoved) {
+                  cls = "btn border border-line bg-surface2/30 text-muted line-through opacity-40";
                 }
                 return (
                   <button
                     key={`${opt.title}—${opt.artist}`}
-                    disabled={!isPlaying}
+                    disabled={!isPlaying || isRemoved}
                     onClick={() => answer(opt.title)}
                     className={`${cls} w-full px-5 py-3.5 text-left ${
                       isRevealed && isPicked && !isAnswer ? "animate-shake" : ""

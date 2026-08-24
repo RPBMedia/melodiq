@@ -132,6 +132,7 @@ model Round {
   correct       Boolean   @default(false)
   timeMs        Int       @default(0)
   points        Int       @default(0)
+  hintsUsed     Int       @default(0) // Genre-Journey/Classic hints spent this round; deducts from score
   order         Int       @default(0)
   startedAt     DateTime?
   answeredAt    DateTime?

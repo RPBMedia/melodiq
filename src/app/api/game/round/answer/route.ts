@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { scoreAnswerFor, roundSecondsForMode, pointsForYearGuess, yearGuessCorrect } from "@/lib/scoring";
 import { titlesMatch } from "@/lib/match";
+import { hintsCost } from "@/lib/hints";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +73,11 @@ export async function POST(req: Request) {
         : guessedTitle === round.song.title;
     points = scoreAnswerFor(game.mode, correct, elapsedMs);
     guessStore = guessedTitle ?? null;
+  }
+
+  // Hints erode the round score (server-recorded via /round/hint). Never below 0.
+  if (round.hintsUsed > 0) {
+    points = Math.max(0, points - hintsCost(round.hintsUsed));
   }
 
   await prisma.round.update({
