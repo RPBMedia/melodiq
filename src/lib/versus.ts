@@ -6,7 +6,11 @@
 
 import { randomBytes } from "node:crypto";
 
+// The data model supports up to MATCH_MAX_PLAYERS, but for now every match is
+// locked to 1v1 (MATCH_ACTIVE_MAX). Raising the active cap later is a one-line
+// change here plus UI/copy — the schema and ranking already handle N.
 export const MATCH_MAX_PLAYERS = 5;
+export const MATCH_ACTIVE_MAX = 2;
 export const MATCH_ROUNDS = 10;
 
 /** A short, URL-safe deterministic seed for a match's clip set. */

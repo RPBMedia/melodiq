@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { buildGame } from "@/lib/game";
-import { MATCH_MAX_PLAYERS } from "@/lib/versus";
+import { MATCH_ACTIVE_MAX } from "@/lib/versus";
 
 export const dynamic = "force-dynamic";
 
@@ -27,8 +27,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   let me = match.players.find((p) => p.userId === userId);
   if (!me) {
-    if (match.players.length >= MATCH_MAX_PLAYERS) {
-      return NextResponse.json({ error: "This match is full." }, { status: 409 });
+    // 1v1 for now (schema supports more; see MATCH_ACTIVE_MAX).
+    if (match.players.length >= MATCH_ACTIVE_MAX) {
+      return NextResponse.json({ error: "This match already has two players." }, { status: 409 });
     }
     me = await prisma.matchPlayer.create({ data: { matchId: match.id, userId } });
   }

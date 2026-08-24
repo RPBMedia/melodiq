@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Logo } from "@/components/Logo";
 import { MatchInvite } from "@/components/MatchInvite";
-import { rankMatch, type MatchPlayerView } from "@/lib/versus";
+import { rankMatch, MATCH_ACTIVE_MAX, type MatchPlayerView } from "@/lib/versus";
 import { genreLabel } from "@/lib/genres";
 
 export const dynamic = "force-dynamic";
@@ -57,6 +57,7 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
   const meId = session?.user?.id ?? null;
   const mine = meId ? match.players.find((p) => p.userId === meId) : null;
   const iFinished = !!mine?.finishedAt;
+  const isFull = !mine && match.players.length >= MATCH_ACTIVE_MAX;
   const creatorName = views.find((v) => v.isCreator)?.name.split(" ")[0] ?? "A player";
   const genreText = match.genre ? genreLabel(match.genre) : "All genres";
 
@@ -126,6 +127,15 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
           <Link href="/" className="btn-primary px-6 py-4 text-center">
             Sign in to play
           </Link>
+        ) : isFull ? (
+          <>
+            <p className="text-center text-sm text-muted">
+              This match is a 1-on-1 and already has both players.
+            </p>
+            <Link href="/match/new" className="btn-primary px-6 py-4 text-center">
+              Start your own match
+            </Link>
+          </>
         ) : !iFinished ? (
           <Link href={`/play?match=${match.id}`} className="btn-primary px-6 py-4 text-center text-lg">
             ▶ {mine ? "Play your turn" : "Accept the challenge"}
