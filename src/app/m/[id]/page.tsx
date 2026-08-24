@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Logo } from "@/components/Logo";
 import { MatchInvite } from "@/components/MatchInvite";
-import { rankMatch, MATCH_ACTIVE_MAX, type MatchPlayerView } from "@/lib/versus";
+import { rankMatch, type MatchPlayerView } from "@/lib/versus";
 import { genreLabel } from "@/lib/genres";
 
 export const dynamic = "force-dynamic";
@@ -57,9 +57,10 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
   const meId = session?.user?.id ?? null;
   const mine = meId ? match.players.find((p) => p.userId === meId) : null;
   const iFinished = !!mine?.finishedAt;
-  const isFull = !mine && match.players.length >= MATCH_ACTIVE_MAX;
+  const isFull = !mine && match.players.length >= match.maxPlayers;
   const creatorName = views.find((v) => v.isCreator)?.name.split(" ")[0] ?? "A player";
   const genreText = match.genre ? genreLabel(match.genre) : "All genres";
+  const isDuel = match.maxPlayers === 2;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col px-5 py-10">
@@ -71,11 +72,15 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
       </div>
 
       <div className="mt-8">
-        <p className="pill">🎮 Head-to-Head · {genreText}</p>
+        <p className="pill">
+          🎮 {isDuel ? "Head-to-Head" : `Group match · up to ${match.maxPlayers}`} · {genreText}
+        </p>
         <h1 className="mt-3 font-display text-3xl font-bold">
           {result.complete ? "Match result" : iFinished ? "Your score is in" : `${creatorName} challenges you`}
         </h1>
-        <p className="mt-1 text-muted">Everyone plays the same 10 clips. Best score wins.</p>
+        <p className="mt-1 text-muted">
+          Everyone plays the same 10 clips. Best score wins. · {match.players.length}/{match.maxPlayers} joined
+        </p>
       </div>
 
       {/* Standings */}
@@ -130,7 +135,7 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
         ) : isFull ? (
           <>
             <p className="text-center text-sm text-muted">
-              This match is a 1-on-1 and already has both players.
+              {isDuel ? "This match is a 1-on-1 and already has both players." : "This match is full."}
             </p>
             <Link href="/match/new" className="btn-primary px-6 py-4 text-center">
               Start your own match
@@ -142,7 +147,11 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
           </Link>
         ) : !result.complete ? (
           <>
-            <p className="text-center text-sm text-muted">Waiting for your challenger… send them the link.</p>
+            <p className="text-center text-sm text-muted">
+              {isDuel
+                ? "Waiting for your challenger… send them the link."
+                : `Waiting for more players (${match.players.length}/${match.maxPlayers})… share the link.`}
+            </p>
             <MatchInvite path={`/m/${match.id}`} />
           </>
         ) : (

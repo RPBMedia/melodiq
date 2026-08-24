@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { generateMatchSeed, MATCH_ROUNDS } from "@/lib/versus";
+import { generateMatchSeed, clampMaxPlayers, MATCH_ROUNDS } from "@/lib/versus";
 
 export const dynamic = "force-dynamic";
 
@@ -14,13 +14,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
-  let body: { genre?: string | null } = {};
+  let body: { genre?: string | null; maxPlayers?: number } = {};
   try {
     body = await req.json();
   } catch {
-    // default: all genres
+    // default: all genres, 1v1
   }
   const genre = body.genre && body.genre !== "all" ? body.genre : null;
+  const maxPlayers = clampMaxPlayers(body.maxPlayers ?? 2);
 
   const match = await prisma.match.create({
     data: {
@@ -29,6 +30,7 @@ export async function POST(req: Request) {
       genre,
       mode: "multiple",
       totalRounds: MATCH_ROUNDS,
+      maxPlayers,
       players: { create: { userId: session.user.id } },
     },
   });

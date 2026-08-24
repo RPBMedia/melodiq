@@ -6,12 +6,16 @@
 
 import { randomBytes } from "node:crypto";
 
-// The data model supports up to MATCH_MAX_PLAYERS, but for now every match is
-// locked to 1v1 (MATCH_ACTIVE_MAX). Raising the active cap later is a one-line
-// change here plus UI/copy — the schema and ranking already handle N.
+// Each match sets its own player cap (host's choice), between 1v1 and this max.
+export const MATCH_MIN_PLAYERS = 2;
 export const MATCH_MAX_PLAYERS = 5;
-export const MATCH_ACTIVE_MAX = 2;
 export const MATCH_ROUNDS = 10;
+
+/** Clamp a requested match size to the allowed 2..MATCH_MAX_PLAYERS range. */
+export function clampMaxPlayers(n: number): number {
+  if (!Number.isFinite(n)) return MATCH_MIN_PLAYERS;
+  return Math.max(MATCH_MIN_PLAYERS, Math.min(MATCH_MAX_PLAYERS, Math.round(n)));
+}
 
 /** A short, URL-safe deterministic seed for a match's clip set. */
 export function generateMatchSeed(): string {

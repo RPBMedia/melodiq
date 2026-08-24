@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { rankMatch, generateMatchSeed, type MatchPlayerView } from "./versus";
+import { rankMatch, generateMatchSeed, clampMaxPlayers, type MatchPlayerView } from "./versus";
 
 const p = (over: Partial<MatchPlayerView> & { userId: string }): MatchPlayerView => ({
   name: over.userId,
@@ -10,6 +10,15 @@ const p = (over: Partial<MatchPlayerView> & { userId: string }): MatchPlayerView
   finished: true,
   isCreator: false,
   ...over,
+});
+
+test("clampMaxPlayers keeps size within 2..5", () => {
+  assert.equal(clampMaxPlayers(1), 2);
+  assert.equal(clampMaxPlayers(2), 2);
+  assert.equal(clampMaxPlayers(5), 5);
+  assert.equal(clampMaxPlayers(9), 5);
+  assert.equal(clampMaxPlayers(3.4), 3);
+  assert.equal(clampMaxPlayers(NaN), 2);
 });
 
 test("generateMatchSeed is unique and url-safe", () => {

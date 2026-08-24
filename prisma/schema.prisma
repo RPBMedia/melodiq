@@ -189,6 +189,7 @@ model Match {
   genre       String? // null => all genres
   mode        String   @default("multiple") // always multiple-choice; hints are disabled for matches
   totalRounds Int      @default(10)
+  maxPlayers  Int      @default(2) // 2 (1v1) up to MATCH_MAX_PLAYERS; chosen by the host
   createdAt   DateTime @default(now())
 
   creator User          @relation("MatchCreator", fields: [creatorId], references: [id], onDelete: Cascade)
