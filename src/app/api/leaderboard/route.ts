@@ -10,7 +10,7 @@ export async function GET() {
       // Only completed Classic/Daily games. Survival and Speed use different
       // scoring curves/lengths, so they'd distort a shared ranking — they get
       // their own boards later.
-      where: { finishedAt: { not: null }, mode: { notIn: ["survival", "speed"] } },
+      where: { finishedAt: { not: null }, mode: { notIn: ["survival", "speed", "year"] } },
       orderBy: [{ score: "desc" }, { createdAt: "asc" }],
       take: 25,
       select: {

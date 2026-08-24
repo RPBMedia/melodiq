@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { Visualizer } from "./Visualizer";
 import { Logo } from "./Logo";
-import { roundSecondsForMode, pointsForModeElapsed, SURVIVAL_LIVES } from "@/lib/scoring";
+import { roundSecondsForMode, pointsForModeElapsed, SURVIVAL_LIVES, YEAR_MIN } from "@/lib/scoring";
 import { buildShareText } from "@/lib/share";
 
 type Round = {
@@ -18,7 +18,7 @@ type Round = {
 };
 
 type Mode = "multiple" | "typing"; // Classic input style
-export type Variant = "classic" | "survival" | "speed"; // game type
+export type Variant = "classic" | "survival" | "speed" | "year"; // game type
 type Phase =
   | "setup"
   | "loading"
@@ -29,7 +29,7 @@ type Phase =
   | "finished"
   | "error";
 
-type Reveal = { correct: boolean; points: number; answer: string; artist: string };
+type Reveal = { correct: boolean; points: number; answer: string; artist: string; year: number | null };
 
 export function GamePlayer({
   daily = false,
@@ -67,6 +67,9 @@ export function GamePlayer({
   const [elapsedMs, setElapsedMs] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
   const [typed, setTyped] = useState("");
+  const YEAR_MAX = new Date().getUTCFullYear();
+  const YEAR_MID = Math.round((YEAR_MIN + YEAR_MAX) / 2);
+  const [yearGuess, setYearGuess] = useState<number>(YEAR_MID);
   const [reveal, setReveal] = useState<Reveal | null>(null);
   const answeredRef = useRef(false);
 
@@ -108,6 +111,7 @@ export function GamePlayer({
   const remaining = Math.max(0, roundSeconds - elapsedMs / 1000);
   const liveScore = pointsForModeElapsed(playMode, elapsedMs / 1000);
   const isSurvival = playMode === "survival";
+  const isYear = playMode === "year";
   // Only Classic "typing" uses the text input; every other mode is multiple-choice.
   const inputStyle: Mode = playMode === "typing" ? "typing" : "multiple";
 
@@ -183,7 +187,7 @@ export function GamePlayer({
 
   // ----- Answer the current round (server scores it) -----
   const answer = useCallback(
-    async (guess: string | null) => {
+    async (guess: string | null, year: number | null = null) => {
       if (answeredRef.current || !round || !gameId) return;
       answeredRef.current = true;
       stopClock();
@@ -194,7 +198,7 @@ export function GamePlayer({
         const res = await fetch("/api/game/round/answer", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ gameId, order: round.order, guessedTitle: guess }),
+          body: JSON.stringify({ gameId, order: round.order, guessedTitle: guess, guessedYear: year }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Could not score that round.");
@@ -203,6 +207,7 @@ export function GamePlayer({
           points: data.points,
           answer: data.answer,
           artist: data.artist,
+          year: data.year ?? null,
         });
         setRunningScore((s) => s + data.points);
         // Survival: a wrong answer costs a life.
@@ -242,6 +247,7 @@ export function GamePlayer({
     answeredRef.current = false;
     setPicked(null);
     setTyped("");
+    setYearGuess(YEAR_MID);
     setReveal(null);
     setElapsedMs(0);
     startRef.current = performance.now();
@@ -271,7 +277,7 @@ export function GamePlayer({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ gameId, order: round.order }),
     }).catch(() => {});
-  }, [round, gameId]);
+  }, [round, gameId, YEAR_MID]);
 
   const finishGame = useCallback(async () => {
     setPhase("finished");
@@ -391,7 +397,9 @@ export function GamePlayer({
           ? "Survival run"
           : isSpeedResult
             ? "Speed round"
-            : "Game complete";
+            : playMode === "year"
+              ? "Guess the Year"
+              : "Game complete";
 
     const handleShare = async () => {
       if (!finalResult) return;
@@ -620,15 +628,23 @@ export function GamePlayer({
             <Visualizer active={isPlaying} />
             {isPlaying && (
               <div className="mt-3 text-center">
-                <div className={`font-display text-4xl font-bold tabular-nums ${scoreClass}`}>+{liveScore}</div>
-                <div className="text-xs text-muted">points if correct now</div>
+                {isYear ? (
+                  <div className="text-sm font-semibold text-cyan">🗓️ Guess the release year</div>
+                ) : (
+                  <>
+                    <div className={`font-display text-4xl font-bold tabular-nums ${scoreClass}`}>+{liveScore}</div>
+                    <div className="text-xs text-muted">points if correct now</div>
+                  </>
+                )}
               </div>
             )}
             {isChecking && <p className="mt-3 text-sm text-muted">Checking…</p>}
             {phase === "ready" && (
               <p className="mt-3 text-center text-sm text-muted">
                 {round?.previewUrl
-                  ? "Tap play, then name the track as fast as you can."
+                  ? isYear
+                    ? "Tap play, then guess the year it was released."
+                    : "Tap play, then name the track as fast as you can."
                   : "No preview audio set — guess from the clues. (Add previews with npm run fetch:previews.)"}
               </p>
             )}
@@ -639,7 +655,7 @@ export function GamePlayer({
           )}
 
           {/* Multiple-choice mode */}
-          {inputStyle === "multiple" && (isPlaying || isChecking || isRevealed) && round && (
+          {!isYear && inputStyle === "multiple" && (isPlaying || isChecking || isRevealed) && round && (
             <div className="grid gap-3">
               {round.options.map((opt) => {
                 const isAnswer = isRevealed && reveal?.answer === opt.title;
@@ -698,6 +714,35 @@ export function GamePlayer({
               )}
             </div>
           )}
+
+          {/* Guess the Year mode */}
+          {isYear && (isPlaying || isChecking || isRevealed) && (
+            <div className="grid gap-4">
+              <div className="text-center font-display text-5xl font-bold tabular-nums text-cyan">
+                {yearGuess}
+              </div>
+              <input
+                type="range"
+                min={YEAR_MIN}
+                max={YEAR_MAX}
+                step={1}
+                value={yearGuess}
+                disabled={!isPlaying}
+                onChange={(e) => setYearGuess(Number(e.target.value))}
+                className="w-full accent-cyan"
+                aria-label="Guess the release year"
+              />
+              <div className="flex justify-between text-xs tabular-nums text-muted">
+                <span>{YEAR_MIN}</span>
+                <span>{YEAR_MAX}</span>
+              </div>
+              {isPlaying && (
+                <button onClick={() => answer(null, yearGuess)} className="btn-primary w-full px-6 py-4">
+                  Submit year
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -710,14 +755,24 @@ export function GamePlayer({
             className="card p-5"
           >
             {reveal.correct ? (
-              <p className="font-display text-lg font-semibold text-good">Correct! +{reveal.points} points</p>
+              <p className="font-display text-lg font-semibold text-good">
+                {isYear ? "Nailed the year!" : "Correct!"} +{reveal.points} points
+              </p>
+            ) : reveal.points > 0 ? (
+              <p className="font-display text-lg font-semibold text-cyan">Close! +{reveal.points} points</p>
             ) : (
               <p className="font-display text-lg font-semibold text-bad">
-                {picked ? "Not quite." : "Time's up."} +0 points
+                {picked || (isYear && isRevealed) ? "Not quite." : "Time's up."} +0 points
               </p>
             )}
             <p className="mt-1 text-sm text-muted">
-              It was <span className="font-medium text-ink">{reveal.answer}</span> by {reveal.artist}.
+              It was{" "}
+              {isYear && reveal.year != null && (
+                <>
+                  <span className="font-medium text-cyan">{reveal.year}</span> —{" "}
+                </>
+              )}
+              <span className="font-medium text-ink">{reveal.answer}</span> by {reveal.artist}.
             </p>
             {isSurvival && lives <= 0 && (
               <p className="mt-2 font-display text-sm font-semibold text-bad">💀 Out of lives — that&rsquo;s the run.</p>
@@ -741,6 +796,7 @@ const VARIANTS: { id: Variant; title: string; sub: string; emoji: string }[] = [
   { id: "classic", title: "Classic", sub: "10–30 tracks, 30s each", emoji: "🎧" },
   { id: "survival", title: "Survival", sub: "3 lives · how far can you go?", emoji: "💀" },
   { id: "speed", title: "Speed", sub: "Name it in the first seconds", emoji: "⚡" },
+  { id: "year", title: "Guess the Year", sub: "Name the release year", emoji: "🗓️" },
 ];
 
 function SetupScreen({
@@ -770,7 +826,9 @@ function SetupScreen({
       ? "3 lives · difficulty ramps · play until you miss three."
       : variant === "speed"
         ? "10 tracks · 12s each · the first seconds are worth the most."
-        : `${count} songs · 30 seconds each · faster = more points.`;
+        : variant === "year"
+          ? "10 clips · guess the release year · closer = more points."
+          : `${count} songs · 30 seconds each · faster = more points.`;
   type FamilyGroup = {
     id: string;
     label: string;

@@ -14,7 +14,7 @@ export default async function PlayPage({
   if (!session?.user?.id) redirect("/");
   const daily = searchParams?.daily === "1";
   const stageId = searchParams?.stage || undefined;
-  const initialVariant: Variant = ["survival", "speed"].includes(searchParams?.mode ?? "")
+  const initialVariant: Variant = ["survival", "speed", "year"].includes(searchParams?.mode ?? "")
     ? (searchParams!.mode as Variant)
     : "classic";
 

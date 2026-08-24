@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { scoreAnswerFor, roundSecondsForMode } from "@/lib/scoring";
+import { scoreAnswerFor, roundSecondsForMode, pointsForYearGuess, yearGuessCorrect } from "@/lib/scoring";
 import { titlesMatch } from "@/lib/match";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
-  let body: { gameId?: string; order?: number; guessedTitle?: string | null };
+  let body: { gameId?: string; order?: number; guessedTitle?: string | null; guessedYear?: number | null };
   try {
     body = await req.json();
   } catch {
@@ -49,19 +49,35 @@ export async function POST(req: Request) {
   const startedMs = round.startedAt ? round.startedAt.getTime() : now - capMs;
   const elapsedMs = Math.max(0, Math.min(capMs, now - startedMs));
 
-  // Survival and Speed both use multiple-choice input (exact-match); only the
-  // Classic "typing" mode does fuzzy title matching.
-  const correct =
-    game.mode === "typing"
-      ? titlesMatch(guessedTitle ?? null, round.song.title)
-      : guessedTitle === round.song.title;
-
-  const points = scoreAnswerFor(game.mode, correct, elapsedMs);
+  // Score by mode. "year" scores by how close the guessed release year is;
+  // "typing" fuzzy-matches the title; everything else is exact multiple-choice.
+  let correct: boolean;
+  let points: number;
+  let guessStore: string | null;
+  if (game.mode === "year") {
+    const actual = round.song.year;
+    const gy = typeof body.guessedYear === "number" ? Math.round(body.guessedYear) : null;
+    if (actual == null || gy == null) {
+      correct = false;
+      points = 0;
+    } else {
+      correct = yearGuessCorrect(gy, actual);
+      points = pointsForYearGuess(gy, actual);
+    }
+    guessStore = gy != null ? String(gy) : null;
+  } else {
+    correct =
+      game.mode === "typing"
+        ? titlesMatch(guessedTitle ?? null, round.song.title)
+        : guessedTitle === round.song.title;
+    points = scoreAnswerFor(game.mode, correct, elapsedMs);
+    guessStore = guessedTitle ?? null;
+  }
 
   await prisma.round.update({
     where: { id: round.id },
     data: {
-      guessedTitle: guessedTitle ?? null,
+      guessedTitle: guessStore,
       correct,
       points,
       timeMs: Math.round(elapsedMs),
@@ -75,5 +91,6 @@ export async function POST(req: Request) {
     elapsedMs: Math.round(elapsedMs),
     answer: round.song.title,
     artist: round.song.artist,
+    year: round.song.year,
   });
 }

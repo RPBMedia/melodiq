@@ -72,3 +72,25 @@ export function scoreAnswerFor(mode: string, correct: boolean, elapsedMs: number
   if (!correct) return 0;
   return pointsForModeElapsed(mode, elapsedMs / 1000);
 }
+
+// ----- Guess the Year (metadata mode) -----
+// Hear the clip, guess the release year; points scale by how close you are, and
+// a guess within 2 years counts as "correct" (for streaks/collection/accuracy).
+export const YEAR_MIN = 1950;
+export const YEAR_CORRECT_WITHIN = 2;
+
+/** Points for a year guess by absolute distance: 0y→100, ≤1→80, ≤3→50, ≤5→30, ≤10→10, else 0. */
+export function pointsForYearGuess(guess: number, actual: number): number {
+  const d = Math.abs(guess - actual);
+  if (d === 0) return 100;
+  if (d <= 1) return 80;
+  if (d <= 3) return 50;
+  if (d <= 5) return 30;
+  if (d <= 10) return 10;
+  return 0;
+}
+
+/** A year guess "counts" (streak/accuracy) when within YEAR_CORRECT_WITHIN years. */
+export function yearGuessCorrect(guess: number, actual: number): boolean {
+  return Math.abs(guess - actual) <= YEAR_CORRECT_WITHIN;
+}

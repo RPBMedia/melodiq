@@ -5,6 +5,8 @@ import {
   pointsForElapsedSpeed,
   roundSecondsForMode,
   scoreAnswerFor,
+  pointsForYearGuess,
+  yearGuessCorrect,
   ROUND_SECONDS,
   SPEED_ROUND_SECONDS,
 } from "./scoring";
@@ -32,6 +34,21 @@ test("roundSecondsForMode: only speed shortens the window", () => {
   assert.equal(roundSecondsForMode("survival"), ROUND_SECONDS);
   assert.equal(roundSecondsForMode("multiple"), ROUND_SECONDS);
   assert.equal(roundSecondsForMode("typing"), ROUND_SECONDS);
+});
+
+test("pointsForYearGuess scales by distance (symmetric)", () => {
+  assert.equal(pointsForYearGuess(1994, 1994), 100);
+  assert.equal(pointsForYearGuess(1995, 1994), 80);
+  assert.equal(pointsForYearGuess(1991, 1994), 50);
+  assert.equal(pointsForYearGuess(1999, 1994), 30);
+  assert.equal(pointsForYearGuess(2004, 1994), 10);
+  assert.equal(pointsForYearGuess(1980, 1994), 0);
+});
+
+test("yearGuessCorrect within 2 years", () => {
+  assert.equal(yearGuessCorrect(1994, 1994), true);
+  assert.equal(yearGuessCorrect(1996, 1994), true);
+  assert.equal(yearGuessCorrect(1997, 1994), false);
 });
 
 test("scoreAnswerFor dispatches the right curve and zeroes wrong answers", () => {

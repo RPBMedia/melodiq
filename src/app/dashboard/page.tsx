@@ -221,6 +221,14 @@ export default async function Dashboard() {
           accent="linear-gradient(135deg,#FBBF24,#22D3EE)"
           icon={<span className="text-xl">⚡</span>}
         />
+        <DashboardCard
+          index={8}
+          href="/play?mode=year"
+          title="Guess the Year"
+          desc="Name the release year"
+          accent="linear-gradient(135deg,#22D3EE,#8B5CF6)"
+          icon={<span className="text-xl">🗓️</span>}
+        />
       </section>
     </main>
   );

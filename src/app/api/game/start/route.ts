@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   const genre = stage ? stage.stage.genre : body.genre && body.genre !== "all" ? body.genre : null;
   const mode = stage
     ? "multiple"
-    : ["typing", "survival", "speed"].includes(body.mode ?? "")
+    : ["typing", "survival", "speed", "year"].includes(body.mode ?? "")
       ? (body.mode as string)
       : "multiple";
 
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
   } else if (mode === "survival") {
     count = SURVIVAL_STACK;
     ramp = true;
-  } else if (mode === "speed") {
+  } else if (mode === "speed" || mode === "year") {
     count = SONGS_PER_GAME;
   } else {
     count = [10, 20, 30].includes(body.count ?? 10) ? (body.count as number) : 10;
