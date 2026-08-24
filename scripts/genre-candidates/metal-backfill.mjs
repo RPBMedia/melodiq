@@ -1,0 +1,53 @@
+// Backfill after the power/prog reclass pulled tracks out of heavy metal and
+// folk metal. Deeper cuts so they survive de-dup against the existing pool.
+// difficulty: 1 easy · 2 medium · 3 hard.
+export default [
+  {
+    genre: "heavy metal",
+    coverColor: "#8B5CF6",
+    songs: [
+      { title: "Flight of Icarus", artist: "Iron Maiden", year: 1983, difficulty: 2 },
+      { title: "Can I Play with Madness", artist: "Iron Maiden", year: 1988, difficulty: 2 },
+      { title: "The Evil That Men Do", artist: "Iron Maiden", year: 1988, difficulty: 2 },
+      { title: "Wasted Years", artist: "Iron Maiden", year: 1986, difficulty: 2 },
+      { title: "Turbo Lover", artist: "Judas Priest", year: 1986, difficulty: 2 },
+      { title: "Hell Bent for Leather", artist: "Judas Priest", year: 1978, difficulty: 3 },
+      { title: "You've Got Another Thing Comin'", artist: "Judas Priest", year: 1982, difficulty: 1 },
+      { title: "747 (Strangers in the Night)", artist: "Saxon", year: 1980, difficulty: 3 },
+      { title: "Denim and Leather", artist: "Saxon", year: 1981, difficulty: 3 },
+      { title: "The Last in Line", artist: "Dio", year: 1984, difficulty: 2 },
+      { title: "Don't Talk to Strangers", artist: "Dio", year: 1983, difficulty: 2 },
+      { title: "Flying High Again", artist: "Ozzy Osbourne", year: 1981, difficulty: 2 },
+      { title: "No More Tears", artist: "Ozzy Osbourne", year: 1991, difficulty: 1 },
+      { title: "Children of the Grave", artist: "Black Sabbath", year: 1971, difficulty: 2 },
+      { title: "N.I.B.", artist: "Black Sabbath", year: 1970, difficulty: 2 },
+      { title: "Overkill", artist: "Motörhead", year: 1979, difficulty: 3 },
+      { title: "Bomber", artist: "Motörhead", year: 1979, difficulty: 3 },
+      { title: "Iron Fist", artist: "Motörhead", year: 1982, difficulty: 3 },
+    ],
+  },
+  {
+    genre: "folk metal",
+    coverColor: "#8B5CF6",
+    songs: [
+      { title: "Vodka", artist: "Korpiklaani", year: 2009, difficulty: 2 },
+      { title: "Beer Beer", artist: "Korpiklaani", year: 2011, difficulty: 2 },
+      { title: "Happy Little Boozer", artist: "Korpiklaani", year: 2012, difficulty: 2 },
+      { title: "From Afar", artist: "Ensiferum", year: 2009, difficulty: 3 },
+      { title: "One More Magic Potion", artist: "Ensiferum", year: 2007, difficulty: 3 },
+      { title: "Lai Lai Hei", artist: "Ensiferum", year: 2004, difficulty: 3 },
+      { title: "A Rose for Epona", artist: "Eluveitie", year: 2012, difficulty: 2 },
+      { title: "Thousandfold", artist: "Eluveitie", year: 2012, difficulty: 2 },
+      { title: "Call of the Mountains", artist: "Eluveitie", year: 2014, difficulty: 2 },
+      { title: "Nattfödd", artist: "Finntroll", year: 2004, difficulty: 3 },
+      { title: "Solsagan", artist: "Finntroll", year: 2007, difficulty: 3 },
+      { title: "Stand Up and Fight", artist: "Turisas", year: 2011, difficulty: 2 },
+      { title: "To Holmgard and Beyond", artist: "Turisas", year: 2007, difficulty: 3 },
+      { title: "Drink", artist: "Alestorm", year: 2014, difficulty: 1 },
+      { title: "Mexico", artist: "Alestorm", year: 2014, difficulty: 1 },
+      { title: "Beyond the Dark Sun", artist: "Wintersun", year: 2004, difficulty: 3 },
+      { title: "Sons of Winter and Stars", artist: "Wintersun", year: 2004, difficulty: 3 },
+      { title: "Yarilo", artist: "Arkona", year: 2011, difficulty: 3 },
+    ],
+  },
+];

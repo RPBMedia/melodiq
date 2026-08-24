@@ -78,6 +78,8 @@ export const GENRE_FAMILIES: GenreFamily[] = [
     accent: VIOLET,
     genres: [
       { id: "heavy metal", label: "Heavy Metal", family: "metal", emoji: "🔥", accent: VIOLET },
+      { id: "power metal", label: "Speed/Power Metal", family: "metal", emoji: "⚡", accent: VIOLET, aliases: ["speed metal", "speed/power metal", "power/speed metal", "speed power metal"] },
+      { id: "progressive metal", label: "Progressive Metal", family: "metal", emoji: "🌀", accent: VIOLET, aliases: ["prog metal", "prog-metal", "progressive-metal"] },
       { id: "death metal", label: "Death Metal", family: "metal", emoji: "💀", accent: VIOLET },
       { id: "black metal", label: "Black Metal", family: "metal", emoji: "🌑", accent: VIOLET },
       { id: "folk metal", label: "Folk Metal", family: "metal", emoji: "⚔️", accent: VIOLET },
