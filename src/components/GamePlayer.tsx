@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Visualizer } from "./Visualizer";
 import { Logo } from "./Logo";
@@ -53,13 +54,17 @@ export function GamePlayer({
   daily = false,
   initialVariant = "classic",
   stageId,
+  matchId,
 }: {
   daily?: boolean;
   initialVariant?: Variant;
   stageId?: string;
+  matchId?: string;
 }) {
+  const router = useRouter();
   const isStage = !!stageId;
-  const [phase, setPhase] = useState<Phase>(daily || isStage ? "loading" : "setup");
+  const isMatch = !!matchId;
+  const [phase, setPhase] = useState<Phase>(daily || isStage || isMatch ? "loading" : "setup");
   const [error, setError] = useState<string | null>(null);
 
   // setup choices
@@ -117,6 +122,7 @@ export function GamePlayer({
     newRecords: number;
     gameId: string;
     genre: string | null;
+    matchId: string | null;
     journeyResult: {
       journeyId: string;
       stageId: string;
@@ -138,8 +144,8 @@ export function GamePlayer({
   const isYear = playMode === "year";
   // Only Classic "typing" uses the text input; every other mode is multiple-choice.
   const inputStyle: Mode = playMode === "typing" ? "typing" : "multiple";
-  // Hints — single-player Classic only; ladder bought in order.
-  const hintLevelsAvailable = availableHintLevels(playMode);
+  // Hints — single-player Classic only; never in Head-to-Head (equal terms).
+  const hintLevelsAvailable = isMatch ? 0 : availableHintLevels(playMode);
   const nextHint = hints.length < hintLevelsAvailable ? HINT_LADDER[hints.length] : null;
 
   const stopClock = useCallback(() => {
@@ -168,15 +174,17 @@ export function GamePlayer({
     try {
       // Classic sends its input style (multiple/typing); Survival/Speed send
       // the variant as the mode (both are multiple-choice server-side). A
-      // Journey stage sends its stageId and the server fixes the rest.
+      // Journey stage sends its stageId; a Match plays its seeded turn.
       const requestMode = variant === "classic" ? mode : variant;
       const res = daily
         ? await fetch("/api/daily", { method: "POST" })
-        : await fetch("/api/game/start", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(isStage ? { stageId } : { genre, mode: requestMode, count }),
-          });
+        : isMatch
+          ? await fetch(`/api/match/${matchId}/play`, { method: "POST" })
+          : await fetch("/api/game/start", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(isStage ? { stageId } : { genre, mode: requestMode, count }),
+            });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         if (daily && res.status === 409) {
@@ -185,6 +193,11 @@ export function GamePlayer({
         throw new Error(data.error || "Could not start the game.");
       }
       const data = await res.json();
+      // Match turn already finished -> go straight to the result.
+      if (data.finished && isMatch) {
+        router.push(`/m/${matchId}`);
+        return;
+      }
       setGameId(data.gameId);
       setRounds(data.rounds);
       setTitlePool(data.titlePool ?? []);
@@ -200,17 +213,17 @@ export function GamePlayer({
       setError(e instanceof Error ? e.message : "Something went wrong.");
       setPhase("error");
     }
-  }, [genre, mode, count, daily, variant, isStage, stageId]);
+  }, [genre, mode, count, daily, variant, isStage, stageId, isMatch, matchId, router]);
 
   // The Daily Challenge auto-starts (no setup screen). Guard so React's
   // dev double-invoke can't fire two starts.
   const autoStartedRef = useRef(false);
   useEffect(() => {
-    if ((daily || isStage) && !autoStartedRef.current) {
+    if ((daily || isStage || isMatch) && !autoStartedRef.current) {
       autoStartedRef.current = true;
       void startGame();
     }
-  }, [daily, isStage, startGame]);
+  }, [daily, isStage, isMatch, startGame]);
 
   // ----- Answer the current round (server scores it) -----
   const answer = useCallback(
@@ -354,6 +367,7 @@ export function GamePlayer({
           newRecords: data.newRecords ?? 0,
           gameId: data.gameId ?? gameId,
           genre: data.genre ?? null,
+          matchId: data.matchId ?? null,
           journeyResult: data.journeyResult ?? null,
         });
       } else {
@@ -586,7 +600,7 @@ export function GamePlayer({
         </div>
         {error && <p className="mt-4 text-sm text-bad">{error}</p>}
         <div className="mt-7 flex flex-col gap-3">
-          {finalResult?.gameId && (
+          {finalResult?.gameId && !finalResult?.matchId && (
             <button
               onClick={handleShare}
               className="flex items-center justify-center gap-2 rounded-2xl border border-violet/50 bg-violet/15 px-6 py-4 font-semibold text-ink hover:bg-violet/25"
@@ -594,7 +608,16 @@ export function GamePlayer({
               {shareState === "copied" ? "✓ Link copied!" : "📣 Share your score"}
             </button>
           )}
-          {journey ? (
+          {finalResult?.matchId ? (
+            <>
+              <Link href={`/m/${finalResult.matchId}`} className="btn-primary px-6 py-4">
+                See match result →
+              </Link>
+              <Link href="/dashboard" className="text-sm text-muted hover:text-ink text-center">
+                Back to dashboard
+              </Link>
+            </>
+          ) : journey ? (
             <>
               {journey.nextStageId ? (
                 <Link href={`/play?stage=${journey.nextStageId}`} className="btn-primary px-6 py-4">

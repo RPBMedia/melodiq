@@ -31,8 +31,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Game not found." }, { status: 404 });
   }
 
-  // Single-player only + mode-gated. Multiplayer match rounds will report 0
-  // available levels so hints can never be bought there.
+  // Single-player only: Head-to-Head matches never offer hints, so all players
+  // compete on equal terms. Enforced here on the server, not just in the UI.
+  if (game.matchId) {
+    return NextResponse.json({ error: "Hints are disabled in Head-to-Head." }, { status: 400 });
+  }
   const maxLevels = availableHintLevels(game.mode);
   if (maxLevels === 0) {
     return NextResponse.json({ error: "Hints aren't available in this mode." }, { status: 400 });

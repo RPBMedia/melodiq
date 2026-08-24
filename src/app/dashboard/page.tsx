@@ -229,6 +229,14 @@ export default async function Dashboard() {
           accent="linear-gradient(135deg,#22D3EE,#8B5CF6)"
           icon={<span className="text-xl">🗓️</span>}
         />
+        <DashboardCard
+          index={9}
+          href="/match/new"
+          title="Head-to-Head"
+          desc="Challenge a friend, same clips"
+          accent="linear-gradient(135deg,#FF2D87,#FBBF24)"
+          icon={<span className="text-xl">🎮</span>}
+        />
       </section>
     </main>
   );

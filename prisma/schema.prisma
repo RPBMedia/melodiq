@@ -33,6 +33,8 @@ model User {
   games         GameSession[]
   achievements  UserAchievement[]
   stageProgress UserStageProgress[]
+  matchesMade   Match[]             @relation("MatchCreator")
+  matchPlays    MatchPlayer[]
 }
 
 model Account {
@@ -106,11 +108,13 @@ model GameSession {
   genre        String? // null => all genres
   dailyDate    String? // "YYYY-MM-DD" (UTC) if this game is that day's Daily Challenge; else null
   stageId      String? // a Genre Journey stage id (src/lib/journeys.ts) if this game is a journey stage; else null
+  matchId      String? // set when this game is a player's turn in an async Head-to-Head match; disables hints
   createdAt    DateTime  @default(now())
   finishedAt   DateTime? // set when the game is completed; only finished games count
 
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  rounds Round[]
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rounds      Round[]
+  matchPlayer MatchPlayer?
 
   // One Daily Challenge per user per day. Normal games (dailyDate = null) are
   // unaffected — Postgres treats NULLs as distinct, so they never collide.
@@ -172,5 +176,44 @@ model UserStageProgress {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, stageId])
+  @@index([userId])
+}
+
+// An async Head-to-Head match: everyone plays the SAME seeded clip set and scores
+// are compared. `players` is a collection (not player1/player2 columns) so the
+// same model supports 2 today and up to MATCH_MAX_PLAYERS later with no migration.
+model Match {
+  id          String   @id @default(cuid())
+  creatorId   String
+  seed        String // deterministic clip set (shared by every player), like the Daily
+  genre       String? // null => all genres
+  mode        String   @default("multiple") // always multiple-choice; hints are disabled for matches
+  totalRounds Int      @default(10)
+  createdAt   DateTime @default(now())
+
+  creator User          @relation("MatchCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  players MatchPlayer[]
+
+  @@index([creatorId])
+}
+
+// One player's participation in a match. Their turn is a normal seeded
+// GameSession; the score is copied here on finish for a cheap comparison read.
+model MatchPlayer {
+  id            String    @id @default(cuid())
+  matchId       String
+  userId        String
+  gameSessionId String?   @unique
+  score         Int       @default(0)
+  correctCount  Int       @default(0)
+  finishedAt    DateTime?
+  joinedAt      DateTime  @default(now())
+
+  match       Match        @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gameSession GameSession? @relation(fields: [gameSessionId], references: [id])
+
+  @@unique([matchId, userId]) // one entry per player per match
+  @@index([matchId])
   @@index([userId])
 }

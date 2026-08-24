@@ -8,12 +8,13 @@ export const dynamic = "force-dynamic";
 export default async function PlayPage({
   searchParams,
 }: {
-  searchParams: { daily?: string; mode?: string; stage?: string };
+  searchParams: { daily?: string; mode?: string; stage?: string; match?: string };
 }) {
   const session = await auth();
   if (!session?.user?.id) redirect("/");
   const daily = searchParams?.daily === "1";
   const stageId = searchParams?.stage || undefined;
+  const matchId = searchParams?.match || undefined;
   const initialVariant: Variant = ["survival", "speed", "year"].includes(searchParams?.mode ?? "")
     ? (searchParams!.mode as Variant)
     : "classic";
@@ -25,7 +26,7 @@ export default async function PlayPage({
           ← Dashboard
         </Link>
       </div>
-      <GamePlayer daily={daily} initialVariant={initialVariant} stageId={stageId} />
+      <GamePlayer daily={daily} initialVariant={initialVariant} stageId={stageId} matchId={matchId} />
     </main>
   );
 }

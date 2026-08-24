@@ -169,6 +169,15 @@ export async function POST(req: Request) {
     }
   }
 
+  // Head-to-Head: copy the result onto the player's match entry for a cheap
+  // comparison read on the match page.
+  if (game.matchId) {
+    await prisma.matchPlayer.updateMany({
+      where: { matchId: game.matchId, userId: session.user.id },
+      data: { score, correctCount, finishedAt: new Date() },
+    });
+  }
+
   return NextResponse.json({
     gameId: game.id,
     score,
@@ -176,6 +185,7 @@ export async function POST(req: Request) {
     totalRounds: game.totalRounds,
     mode: game.mode,
     genre: game.genre,
+    matchId: game.matchId,
     journeyResult,
     isDaily,
     dailyDate: game.dailyDate,
