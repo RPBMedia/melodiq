@@ -15,7 +15,7 @@ export default function LeaderboardPage() {
         </Link>
       </header>
       <h1 className="mt-8 font-display text-3xl font-bold">🏆 Leaderboard</h1>
-      <p className="mt-1 text-muted">Top scores from every player.</p>
+      <p className="mt-1 text-muted">Top scores — all-time or this week, filtered by genre.</p>
       <LeaderboardList />
     </main>
   );
