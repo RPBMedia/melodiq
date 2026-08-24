@@ -2,36 +2,36 @@
 
 import { useState } from "react";
 
-// Share/copy the match link so a friend can accept the challenge.
+// Copy the match link to the clipboard so the host can paste it to a friend.
+// Deliberately NOT the native share sheet — on desktop that menu confused testers;
+// a direct copy with a clear confirmation is predictable everywhere.
 export function MatchInvite({ path }: { path: string }) {
   const [copied, setCopied] = useState(false);
+  const [failed, setFailed] = useState(false);
 
-  async function invite() {
+  async function copy() {
+    setFailed(false);
     const url = `${window.location.origin}${path}`;
-    const text = "I challenge you on MelodIQ 🎧 — same 10 clips, best score wins.";
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: "MelodIQ Head-to-Head", text, url });
-        return;
-      } catch {
-        return;
-      }
-    }
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setCopied(false), 3000);
     } catch {
-      /* ignore */
+      setFailed(true);
     }
   }
 
   return (
-    <button
-      onClick={invite}
-      className="btn-primary w-full px-6 py-4 text-base"
-    >
-      {copied ? "✓ Link copied!" : "📣 Invite a friend"}
-    </button>
+    <div className="flex flex-col gap-2">
+      <button onClick={copy} className="btn-primary w-full px-6 py-4 text-base">
+        {copied ? "✓ Link copied! Send it to your friend" : "📋 Copy invite link"}
+      </button>
+      {failed && (
+        <p className="break-all text-center text-xs text-muted">
+          Couldn&rsquo;t copy automatically — here&rsquo;s the link:{" "}
+          <span className="text-ink">{path}</span>
+        </p>
+      )}
+    </div>
   );
 }

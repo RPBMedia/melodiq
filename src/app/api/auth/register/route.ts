@@ -27,12 +27,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: pwProblem }, { status: 400 });
   }
 
-  const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+  const existing = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true, passwordHash: true },
+  });
   if (existing) {
-    return NextResponse.json(
-      { error: "That email is already registered. Try signing in instead." },
-      { status: 409 },
-    );
+    // No passwordHash => the account is OAuth (Google). Point them at the right button.
+    const error = existing.passwordHash
+      ? "That email is already registered. Try signing in instead."
+      : "This email is registered with Google — use Continue with Google below.";
+    return NextResponse.json({ error }, { status: 409 });
   }
 
   await prisma.user.create({

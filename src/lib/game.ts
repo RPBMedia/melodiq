@@ -3,6 +3,7 @@ import { SONGS_PER_GAME, OPTIONS_PER_ROUND } from "@/lib/scoring";
 import { resolvePreview, isEphemeralPreview } from "@/lib/preview";
 import { familyOf, genreMeta } from "@/lib/genres";
 import { hashSeed, mulberry32, seededShuffle } from "@/lib/progression";
+import { stratifiedPick } from "@/lib/pool";
 
 /** A family selection (the "All Metal" pill) arrives as "family:<id>". */
 const FAMILY_PREFIX = "family:";
@@ -66,8 +67,14 @@ export async function buildGame(
 
   const pool = inGenre.length >= OPTIONS_PER_ROUND ? inGenre : all;
 
-  // Requested length, capped by how many distinct songs the pool can field.
-  const picks = shuffle(pool).slice(0, Math.min(count, pool.length));
+  // Requested length, capped by how many distinct songs the pool can field. For
+  // an "all genres" game, spread picks evenly across families so the largest
+  // family (metal, with the most sub-genres) can't dominate; a specific genre or
+  // family selection just shuffles within its own pool.
+  const wantAllGenres = !genre || genre === "all";
+  const picks = wantAllGenres
+    ? stratifiedPick(pool, (s) => familyOf(s.genre) ?? "other", count, shuffle)
+    : shuffle(pool).slice(0, Math.min(count, pool.length));
 
   // Survival ramps difficulty: order picks easy -> hard. The sort is stable, so
   // songs of the same tier keep their shuffled (random) order.
