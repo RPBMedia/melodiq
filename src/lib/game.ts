@@ -37,6 +37,7 @@ export async function buildGame(
   genre?: string | null,
   count: number = SONGS_PER_GAME,
   seed?: string,
+  ramp: boolean = false,
 ): Promise<BuiltGame> {
   const rng = seed ? mulberry32(hashSeed(seed)) : Math.random;
   const shuffle = <T>(arr: T[]): T[] => seededShuffle(arr, rng);
@@ -67,6 +68,12 @@ export async function buildGame(
 
   // Requested length, capped by how many distinct songs the pool can field.
   const picks = shuffle(pool).slice(0, Math.min(count, pool.length));
+
+  // Survival ramps difficulty: order picks easy -> hard. The sort is stable, so
+  // songs of the same tier keep their shuffled (random) order.
+  if (ramp) {
+    picks.sort((a, b) => a.difficulty - b.difficulty);
+  }
 
   // Freshen preview URLs at serve time: Deezer URLs expire (403 → silence), so
   // re-resolve any missing/ephemeral one now. Stable iTunes URLs are kept. Done

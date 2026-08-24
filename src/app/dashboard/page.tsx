@@ -190,6 +190,22 @@ export default async function Dashboard() {
           accent="linear-gradient(135deg,#34D399,#8B5CF6)"
           icon={<span className="text-xl">💿</span>}
         />
+        <DashboardCard
+          index={5}
+          href="/play?mode=survival"
+          title="Survival"
+          desc="3 lives · how far can you go?"
+          accent="linear-gradient(135deg,#FB7185,#FF2D87)"
+          icon={<span className="text-xl">💀</span>}
+        />
+        <DashboardCard
+          index={6}
+          href="/play?mode=speed"
+          title="Speed"
+          desc="Name it in the first seconds"
+          accent="linear-gradient(135deg,#FBBF24,#22D3EE)"
+          icon={<span className="text-xl">⚡</span>}
+        />
       </section>
     </main>
   );

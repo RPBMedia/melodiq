@@ -1,18 +1,21 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { GamePlayer } from "@/components/GamePlayer";
+import { GamePlayer, type Variant } from "@/components/GamePlayer";
 
 export const dynamic = "force-dynamic";
 
 export default async function PlayPage({
   searchParams,
 }: {
-  searchParams: { daily?: string };
+  searchParams: { daily?: string; mode?: string };
 }) {
   const session = await auth();
   if (!session?.user?.id) redirect("/");
   const daily = searchParams?.daily === "1";
+  const initialVariant: Variant = ["survival", "speed"].includes(searchParams?.mode ?? "")
+    ? (searchParams!.mode as Variant)
+    : "classic";
 
   return (
     <main className="mx-auto max-w-md px-5 pb-12 pt-8 lg:max-w-5xl lg:px-8">
@@ -21,7 +24,7 @@ export default async function PlayPage({
           ← Dashboard
         </Link>
       </div>
-      <GamePlayer daily={daily} />
+      <GamePlayer daily={daily} initialVariant={initialVariant} />
     </main>
   );
 }

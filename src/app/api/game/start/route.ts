@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { buildGame } from "@/lib/game";
+import { SONGS_PER_GAME, SURVIVAL_STACK } from "@/lib/scoring";
 
 export const dynamic = "force-dynamic";
 
@@ -18,11 +19,25 @@ export async function POST(req: Request) {
     // empty body is fine — defaults to all genres, multiple choice, 10 songs
   }
   const genre = body.genre && body.genre !== "all" ? body.genre : null;
-  const mode = body.mode === "typing" ? "typing" : "multiple";
-  const count = [10, 20, 30].includes(body.count ?? 10) ? (body.count as number) : 10;
+  const mode = ["typing", "survival", "speed"].includes(body.mode ?? "")
+    ? (body.mode as string)
+    : "multiple";
+
+  // Survival plays a deep, difficulty-ramped stack (ends when lives run out);
+  // Speed is a normal-length game; Classic honours the chosen length.
+  let count: number;
+  let ramp = false;
+  if (mode === "survival") {
+    count = SURVIVAL_STACK;
+    ramp = true;
+  } else if (mode === "speed") {
+    count = SONGS_PER_GAME;
+  } else {
+    count = [10, 20, 30].includes(body.count ?? 10) ? (body.count as number) : 10;
+  }
 
   try {
-    const { rounds, titlePool } = await buildGame(genre, count);
+    const { rounds, titlePool } = await buildGame(genre, count, undefined, ramp);
 
     const game = await prisma.gameSession.create({
       data: {

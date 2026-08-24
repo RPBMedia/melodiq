@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { Visualizer } from "./Visualizer";
 import { Logo } from "./Logo";
-import { ROUND_SECONDS, pointsForElapsed } from "@/lib/scoring";
+import { roundSecondsForMode, pointsForModeElapsed, SURVIVAL_LIVES } from "@/lib/scoring";
 import { buildShareText } from "@/lib/share";
 
 type Round = {
@@ -17,7 +17,8 @@ type Round = {
   options: { title: string; artist: string }[];
 };
 
-type Mode = "multiple" | "typing";
+type Mode = "multiple" | "typing"; // Classic input style
+export type Variant = "classic" | "survival" | "speed"; // game type
 type Phase =
   | "setup"
   | "loading"
@@ -30,14 +31,27 @@ type Phase =
 
 type Reveal = { correct: boolean; points: number; answer: string; artist: string };
 
-export function GamePlayer({ daily = false }: { daily?: boolean }) {
+export function GamePlayer({
+  daily = false,
+  initialVariant = "classic",
+}: {
+  daily?: boolean;
+  initialVariant?: Variant;
+}) {
   const [phase, setPhase] = useState<Phase>(daily ? "loading" : "setup");
   const [error, setError] = useState<string | null>(null);
 
   // setup choices
+  const [variant, setVariant] = useState<Variant>(initialVariant);
   const [mode, setMode] = useState<Mode>("multiple");
   const [genre, setGenre] = useState<string>("all");
   const [count, setCount] = useState<number>(10);
+
+  // The authoritative mode of the game in progress (echoed by the server at
+  // start): "multiple" | "typing" | "survival" | "speed". Drives timer/curve/lives.
+  const [playMode, setPlayMode] = useState<string>("multiple");
+  const [lives, setLives] = useState<number>(SURVIVAL_LIVES);
+  const livesRef = useRef<number>(SURVIVAL_LIVES);
 
   // game data
   const [gameId, setGameId] = useState<string | null>(null);
@@ -77,8 +91,12 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
   } | null>(null);
 
   const round = rounds[idx];
-  const remaining = Math.max(0, ROUND_SECONDS - elapsedMs / 1000);
-  const liveScore = pointsForElapsed(elapsedMs / 1000);
+  const roundSeconds = roundSecondsForMode(playMode);
+  const remaining = Math.max(0, roundSeconds - elapsedMs / 1000);
+  const liveScore = pointsForModeElapsed(playMode, elapsedMs / 1000);
+  const isSurvival = playMode === "survival";
+  // Only Classic "typing" uses the text input; every other mode is multiple-choice.
+  const inputStyle: Mode = playMode === "typing" ? "typing" : "multiple";
 
   const stopClock = useCallback(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -104,12 +122,15 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
     setPhase("loading");
     setError(null);
     try {
+      // Classic sends its input style (multiple/typing); Survival/Speed send
+      // the variant as the mode (both are multiple-choice server-side).
+      const requestMode = variant === "classic" ? mode : variant;
       const res = daily
         ? await fetch("/api/daily", { method: "POST" })
         : await fetch("/api/game/start", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ genre, mode, count }),
+            body: JSON.stringify({ genre, mode: requestMode, count }),
           });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -124,13 +145,17 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
       setTitlePool(data.titlePool ?? []);
       setIdx(0);
       setRunningScore(0);
-      if (daily) setMode("multiple"); // the Daily Challenge is always multiple-choice
+      livesRef.current = SURVIVAL_LIVES;
+      setLives(SURVIVAL_LIVES);
+      // Server echoes the authoritative mode; the Daily is always multiple-choice.
+      setPlayMode(daily ? "multiple" : data.mode ?? "multiple");
+      if (daily) setMode("multiple");
       setPhase("ready");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
       setPhase("error");
     }
-  }, [genre, mode, count, daily]);
+  }, [genre, mode, count, daily, variant]);
 
   // The Daily Challenge auto-starts (no setup screen). Guard so React's
   // dev double-invoke can't fire two starts.
@@ -166,22 +191,28 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
           artist: data.artist,
         });
         setRunningScore((s) => s + data.points);
+        // Survival: a wrong answer costs a life.
+        if (playMode === "survival" && !data.correct) {
+          livesRef.current = Math.max(0, livesRef.current - 1);
+          setLives(livesRef.current);
+        }
         setPhase("revealed");
       } catch (e) {
         setError(e instanceof Error ? e.message : "Scoring failed.");
         setPhase("error");
       }
     },
-    [round, gameId, stopClock],
+    [round, gameId, stopClock, playMode],
   );
 
   // ----- Clock loop while playing -----
   useEffect(() => {
     if (phase !== "playing") return;
+    const capMs = roundSecondsForMode(playMode) * 1000;
     const loop = () => {
       const e = performance.now() - startRef.current;
       setElapsedMs(e);
-      if (e >= ROUND_SECONDS * 1000) {
+      if (e >= capMs) {
         void answer(null); // time's up -> miss
         return;
       }
@@ -189,7 +220,7 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
     };
     rafRef.current = requestAnimationFrame(loop);
     return stopClock;
-  }, [phase, answer, stopClock]);
+  }, [phase, answer, stopClock, playMode]);
 
   // ----- Begin a round: tell the server, then play -----
   const playRound = useCallback(() => {
@@ -263,6 +294,11 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
   }, [gameId]);
 
   const next = useCallback(() => {
+    // Survival ends when lives run out (or the deep stack is exhausted).
+    if (playMode === "survival" && livesRef.current <= 0) {
+      void finishGame();
+      return;
+    }
     if (idx + 1 >= rounds.length) {
       void finishGame();
       return;
@@ -275,11 +311,23 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
     setTyped("");
     setIdx((i) => i + 1);
     setPhase("ready");
-  }, [idx, rounds.length, finishGame]);
+  }, [idx, rounds.length, finishGame, playMode]);
 
   // ---------- Render ----------
   if (phase === "setup") {
-    return <SetupScreen mode={mode} setMode={setMode} genre={genre} setGenre={setGenre} count={count} setCount={setCount} onStart={startGame} />;
+    return (
+      <SetupScreen
+        variant={variant}
+        setVariant={setVariant}
+        mode={mode}
+        setMode={setMode}
+        genre={genre}
+        setGenre={setGenre}
+        count={count}
+        setCount={setCount}
+        onStart={startGame}
+      />
+    );
   }
 
   if (phase === "loading") {
@@ -317,6 +365,15 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
     const pct = total ? Math.round((score / (total * 100)) * 100) : 0;
     const xpEarned = finalResult?.xpEarned ?? 0;
     const isDailyResult = finalResult?.isDaily ?? daily;
+    const isSurvivalResult = playMode === "survival";
+    const isSpeedResult = playMode === "speed";
+    const pillText = isDailyResult
+      ? "Daily Challenge complete"
+      : isSurvivalResult
+        ? "Survival run"
+        : isSpeedResult
+          ? "Speed round"
+          : "Game complete";
 
     const handleShare = async () => {
       if (!finalResult) return;
@@ -352,11 +409,15 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
         animate={{ opacity: 1, scale: 1 }}
         className="card mx-auto max-w-md p-7 text-center"
       >
-        <p className="pill mx-auto">{isDailyResult ? "Daily Challenge complete" : "Game complete"}</p>
-        <h2 className="mt-4 font-display text-2xl font-bold">Nice ears.</h2>
+        <p className="pill mx-auto">{pillText}</p>
+        <h2 className="mt-4 font-display text-2xl font-bold">
+          {isSurvivalResult ? "Run over." : "Nice ears."}
+        </h2>
         <div className="my-6">
           <div className="grad-text font-display text-6xl font-bold tabular-nums">{score}</div>
-          <div className="text-sm text-muted">out of {total * 100} points</div>
+          <div className="text-sm text-muted">
+            {isSurvivalResult ? `${correct} track${correct === 1 ? "" : "s"} identified` : `out of ${total * 100} points`}
+          </div>
         </div>
 
         {/* XP + level-up */}
@@ -412,10 +473,16 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
         )}
 
         <div className="grid grid-cols-2 gap-3 text-left">
-          <Stat label="Correct" value={`${correct}/${total}`} />
+          <Stat label={isSurvivalResult ? "Tracks nailed" : "Correct"} value={isSurvivalResult ? `${correct}` : `${correct}/${total}`} />
           <Stat
-            label={isDailyResult ? "Daily streak" : "Score rate"}
-            value={isDailyResult ? `🔥 ${finalResult?.dailyStreak ?? 1}` : `${pct}%`}
+            label={isDailyResult ? "Daily streak" : isSurvivalResult ? "Lives left" : "Score rate"}
+            value={
+              isDailyResult
+                ? `🔥 ${finalResult?.dailyStreak ?? 1}`
+                : isSurvivalResult
+                  ? `${"❤️".repeat(lives) || "—"}`
+                  : `${pct}%`
+            }
           />
         </div>
         {error && <p className="mt-4 text-sm text-bad">{error}</p>}
@@ -457,7 +524,17 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
         </div>
       </div>
 
-      <ProgressDots total={rounds.length} current={idx} />
+      {isSurvival ? (
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted">Track {idx + 1}</span>
+          <span className="text-lg tracking-tight" aria-label={`${lives} lives left`}>
+            {"❤️".repeat(lives)}
+            {"🖤".repeat(SURVIVAL_LIVES - lives)}
+          </span>
+        </div>
+      ) : (
+        <ProgressDots total={rounds.length} current={idx} />
+      )}
 
       {/* Audio is a plain Audio() object owned imperatively (see the effect
           above) — deliberately NOT rendered here, so the clock's re-renders
@@ -471,8 +548,8 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
         />
         <div className="relative">
           <div className="flex items-center justify-between">
-            <span className="pill">Round {idx + 1} / {rounds.length}</span>
-            {isPlaying && <TimerRing remaining={remaining} total={ROUND_SECONDS} />}
+            <span className="pill">{isSurvival ? `Track ${idx + 1}` : `Round ${idx + 1} / ${rounds.length}`}</span>
+            {isPlaying && <TimerRing remaining={remaining} total={roundSeconds} />}
           </div>
 
           <div className="my-5 flex flex-col items-center">
@@ -498,7 +575,7 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
           )}
 
           {/* Multiple-choice mode */}
-          {mode === "multiple" && (isPlaying || isChecking || isRevealed) && round && (
+          {inputStyle === "multiple" && (isPlaying || isChecking || isRevealed) && round && (
             <div className="grid gap-3">
               {round.options.map((opt) => {
                 const isAnswer = isRevealed && reveal?.answer === opt.title;
@@ -527,7 +604,7 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
           )}
 
           {/* Typing mode */}
-          {mode === "typing" && (isPlaying || isChecking || isRevealed) && (
+          {inputStyle === "typing" && (isPlaying || isChecking || isRevealed) && (
             <div className="grid gap-3">
               <input
                 list="title-pool"
@@ -578,8 +655,14 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
             <p className="mt-1 text-sm text-muted">
               It was <span className="font-medium text-ink">{reveal.answer}</span> by {reveal.artist}.
             </p>
+            {isSurvival && lives <= 0 && (
+              <p className="mt-2 font-display text-sm font-semibold text-bad">💀 Out of lives — that&rsquo;s the run.</p>
+            )}
+            {isSurvival && lives > 0 && !reveal.correct && (
+              <p className="mt-2 text-sm text-muted">{lives} life{lives === 1 ? "" : "s"} left.</p>
+            )}
             <button onClick={next} className="btn-primary mt-4 w-full px-6 py-4">
-              {idx + 1 >= rounds.length ? "See results" : "Next song →"}
+              {idx + 1 >= rounds.length || (isSurvival && lives <= 0) ? "See results" : "Next song →"}
             </button>
           </motion.div>
         )}
@@ -590,7 +673,15 @@ export function GamePlayer({ daily = false }: { daily?: boolean }) {
 
 // ---------------- Setup screen ----------------
 
+const VARIANTS: { id: Variant; title: string; sub: string; emoji: string }[] = [
+  { id: "classic", title: "Classic", sub: "10–30 tracks, 30s each", emoji: "🎧" },
+  { id: "survival", title: "Survival", sub: "3 lives · how far can you go?", emoji: "💀" },
+  { id: "speed", title: "Speed", sub: "Name it in the first seconds", emoji: "⚡" },
+];
+
 function SetupScreen({
+  variant,
+  setVariant,
   mode,
   setMode,
   genre,
@@ -599,6 +690,8 @@ function SetupScreen({
   setCount,
   onStart,
 }: {
+  variant: Variant;
+  setVariant: (v: Variant) => void;
   mode: Mode;
   setMode: (m: Mode) => void;
   genre: string;
@@ -607,6 +700,13 @@ function SetupScreen({
   setCount: (n: number) => void;
   onStart: () => void;
 }) {
+  const isClassic = variant === "classic";
+  const subtitle =
+    variant === "survival"
+      ? "3 lives · difficulty ramps · play until you miss three."
+      : variant === "speed"
+        ? "10 tracks · 12s each · the first seconds are worth the most."
+        : `${count} songs · 30 seconds each · faster = more points.`;
   type FamilyGroup = {
     id: string;
     label: string;
@@ -635,33 +735,51 @@ function SetupScreen({
       className="mx-auto max-w-md lg:max-w-5xl"
     >
       <h1 className="font-display text-2xl font-bold lg:text-3xl">New game</h1>
-      <p className="mt-1 text-muted">{count} songs · 30 seconds each · faster = more points.</p>
+      <p className="mt-1 text-muted">{subtitle}</p>
 
       {/* On desktop: config rail on the left, the big playlist picker fills the rest. */}
       <div className="mt-7 lg:grid lg:grid-cols-[minmax(260px,300px)_1fr] lg:gap-10">
         {/* Config rail */}
         <div className="lg:sticky lg:top-6 lg:self-start">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">How to answer</h2>
-          <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-1">
-            <Choice active={mode === "multiple"} onClick={() => setMode("multiple")} title="Multiple choice" sub="Pick from 4 options" />
-            <Choice active={mode === "typing"} onClick={() => setMode("typing")} title="Type the title" sub="Harder · type it in" />
-          </div>
-
-          <h2 className="mt-7 text-sm font-semibold uppercase tracking-wider text-muted">Game length</h2>
-          <div className="mt-3 grid grid-cols-3 gap-3">
-            {[10, 20, 30].map((n) => (
-              <button
-                key={n}
-                onClick={() => setCount(n)}
-                className={`rounded-2xl border p-4 text-center transition-all active:scale-[0.98] ${
-                  count === n ? "border-violet bg-violet/15 shadow-glow" : "border-line bg-surface2/50 hover:bg-surface2"
-                }`}
-              >
-                <div className="font-display text-xl font-bold tabular-nums">{n}</div>
-                <div className="text-xs text-muted">songs</div>
-              </button>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">Mode</h2>
+          <div className="mt-3 grid grid-cols-1 gap-3">
+            {VARIANTS.map((v) => (
+              <Choice
+                key={v.id}
+                active={variant === v.id}
+                onClick={() => setVariant(v.id)}
+                title={`${v.emoji} ${v.title}`}
+                sub={v.sub}
+              />
             ))}
           </div>
+
+          {/* Classic-only: input style + game length. Survival/Speed are fixed. */}
+          {isClassic && (
+            <>
+              <h2 className="mt-7 text-sm font-semibold uppercase tracking-wider text-muted">How to answer</h2>
+              <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-1">
+                <Choice active={mode === "multiple"} onClick={() => setMode("multiple")} title="Multiple choice" sub="Pick from 4 options" />
+                <Choice active={mode === "typing"} onClick={() => setMode("typing")} title="Type the title" sub="Harder · type it in" />
+              </div>
+
+              <h2 className="mt-7 text-sm font-semibold uppercase tracking-wider text-muted">Game length</h2>
+              <div className="mt-3 grid grid-cols-3 gap-3">
+                {[10, 20, 30].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setCount(n)}
+                    className={`rounded-2xl border p-4 text-center transition-all active:scale-[0.98] ${
+                      count === n ? "border-violet bg-violet/15 shadow-glow" : "border-line bg-surface2/50 hover:bg-surface2"
+                    }`}
+                  >
+                    <div className="font-display text-xl font-bold tabular-nums">{n}</div>
+                    <div className="text-xs text-muted">songs</div>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
 
           {/* Desktop-only start button lives with the config for easy reach. */}
           <button onClick={onStart} className="btn-primary mt-7 hidden w-full px-6 py-5 text-lg lg:block">▶ Start game</button>

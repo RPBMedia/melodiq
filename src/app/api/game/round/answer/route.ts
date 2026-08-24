@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { scoreAnswer, ROUND_SECONDS } from "@/lib/scoring";
+import { scoreAnswerFor, roundSecondsForMode } from "@/lib/scoring";
 import { titlesMatch } from "@/lib/match";
 
 export const dynamic = "force-dynamic";
@@ -44,18 +44,19 @@ export async function POST(req: Request) {
   // Elapsed time is the gap between the server-stamped start and now. If the
   // round was never legitimately started, treat it as the worst case (full
   // time) rather than instant, so the start step can't be skipped for points.
+  const capMs = roundSecondsForMode(game.mode) * 1000;
   const now = Date.now();
-  const startedMs = round.startedAt
-    ? round.startedAt.getTime()
-    : now - ROUND_SECONDS * 1000;
-  const elapsedMs = Math.max(0, Math.min(ROUND_SECONDS * 1000, now - startedMs));
+  const startedMs = round.startedAt ? round.startedAt.getTime() : now - capMs;
+  const elapsedMs = Math.max(0, Math.min(capMs, now - startedMs));
 
+  // Survival and Speed both use multiple-choice input (exact-match); only the
+  // Classic "typing" mode does fuzzy title matching.
   const correct =
     game.mode === "typing"
       ? titlesMatch(guessedTitle ?? null, round.song.title)
       : guessedTitle === round.song.title;
 
-  const points = scoreAnswer(correct, elapsedMs);
+  const points = scoreAnswerFor(game.mode, correct, elapsedMs);
 
   await prisma.round.update({
     where: { id: round.id },

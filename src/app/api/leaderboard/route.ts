@@ -7,7 +7,10 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const top = await prisma.gameSession.findMany({
-      where: { finishedAt: { not: null } }, // only completed games
+      // Only completed Classic/Daily games. Survival and Speed use different
+      // scoring curves/lengths, so they'd distort a shared ranking — they get
+      // their own boards later.
+      where: { finishedAt: { not: null }, mode: { notIn: ["survival", "speed"] } },
       orderBy: [{ score: "desc" }, { createdAt: "asc" }],
       take: 25,
       select: {
