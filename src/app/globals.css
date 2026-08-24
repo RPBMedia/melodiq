@@ -47,6 +47,10 @@ body {
   .grad-text {
     @apply bg-gradient-to-r from-magenta via-violet to-cyan bg-clip-text text-transparent;
   }
+  .auth-input {
+    @apply w-full rounded-2xl border border-line bg-surface2/70 px-4 py-3.5 text-base
+           text-ink outline-none placeholder:text-muted focus:border-violet;
+  }
 }
 
 /* Score color states for the live decaying counter */

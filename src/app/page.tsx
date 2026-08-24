@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { auth, APPLE_ENABLED } from "@/lib/auth";
 import { Logo } from "@/components/Logo";
 import { Visualizer } from "@/components/Visualizer";
-import { GoogleSignInButton } from "@/components/AuthButtons";
+import { AuthPanel } from "@/components/AuthPanel";
 
 export default async function Landing() {
   const session = await auth();
@@ -33,8 +33,8 @@ export default async function Landing() {
       </div>
 
       <div className="mt-10">
-        <GoogleSignInButton />
-        <p className="mt-3 text-center text-xs text-muted">
+        <AuthPanel appleEnabled={APPLE_ENABLED} />
+        <p className="mt-4 text-center text-xs text-muted">
           Sign in to save scores and climb the leaderboard.
         </p>
       </div>

@@ -14,6 +14,18 @@ export function GoogleSignInButton() {
   );
 }
 
+export function AppleSignInButton() {
+  return (
+    <button
+      onClick={() => signIn("apple", { callbackUrl: "/dashboard" })}
+      className="btn-ghost flex w-full items-center justify-center gap-2 px-6 py-4 text-base"
+    >
+      <AppleGlyph />
+      Continue with Apple
+    </button>
+  );
+}
+
 export function SignOutButton() {
   return (
     <button
@@ -22,6 +34,14 @@ export function SignOutButton() {
     >
       Sign out
     </button>
+  );
+}
+
+function AppleGlyph() {
+  return (
+    <svg width="16" height="18" viewBox="0 0 14 17" aria-hidden fill="currentColor">
+      <path d="M11.6 9c0-1.5.7-2.6 2-3.3-.7-1-1.8-1.6-3.2-1.7-1.3-.1-2.8.8-3.3.8-.5 0-1.7-.8-2.7-.8C2.3 4 .8 5.1.8 7.4c0 .9.2 1.9.5 2.9.5 1.3 2 4.6 3.6 4.5.8 0 1.3-.6 2.3-.6s1.5.6 2.4.6c1.6 0 3-3 3.4-4.3-2.2-1-1.9-3-1.4-1.5zM9.4 2.9c.7-.8 1.1-1.9 1-3-.9.1-2 .6-2.6 1.4-.6.7-1.1 1.8-1 2.9 1 .1 2-.5 2.6-1.3z" />
+    </svg>
   );
 }
 

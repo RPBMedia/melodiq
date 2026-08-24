@@ -19,6 +19,7 @@ model User {
   email         String?       @unique
   emailVerified DateTime?
   image         String?
+  passwordHash  String? // set only for email/password accounts; null for OAuth
   createdAt     DateTime      @default(now())
 
   // Progression (M3). XP is the source of truth; level/rank are derived in
