@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Logo } from "@/components/Logo";
 import { MatchInvite } from "@/components/MatchInvite";
+import { RematchButton } from "@/components/RematchButton";
 import { rankMatch, type MatchPlayerView } from "@/lib/versus";
 import { genreLabel } from "@/lib/genres";
 
@@ -154,12 +155,14 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
             </p>
             <MatchInvite path={`/m/${match.id}`} />
           </>
+        ) : mine ? (
+          <RematchButton matchId={match.id} />
         ) : (
           <MatchInvite path={`/m/${match.id}`} />
         )}
         {meId && (
-          <Link href="/match/new" className="btn-ghost px-6 py-3 text-center">
-            Start a new match
+          <Link href="/matches" className="btn-ghost px-6 py-3 text-center">
+            My matches
           </Link>
         )}
       </div>

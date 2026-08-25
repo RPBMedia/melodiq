@@ -231,9 +231,9 @@ export default async function Dashboard() {
         />
         <DashboardCard
           index={9}
-          href="/match/new"
+          href="/matches"
           title="Head-to-Head"
-          desc="Challenge a friend, same clips"
+          desc="Challenge friends, same clips"
           accent="linear-gradient(135deg,#FF2D87,#FBBF24)"
           icon={<span className="text-xl">🎮</span>}
         />
